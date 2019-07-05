@@ -1,0 +1,14 @@
+namespace net.akehurst.kotlin.composite.api {
+
+  datatype TestDatatype {
+
+        prop1 { composite }
+        prop2 { reference }
+        // prop3 { reference } reference is the default
+        prop4 { ignore }
+        prop4 { identity(1) }
+  }
+
+
+
+}
