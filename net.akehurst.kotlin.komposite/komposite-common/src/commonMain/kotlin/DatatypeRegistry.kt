@@ -38,8 +38,8 @@ class DatatypeRegistry {
 		return this._datatypes.containsKey(value::class.simpleName)
 	}
 
-	fun findDatatypeByName(name:String) : Datatype {
-		return this._datatypes[name]!!
+	fun findDatatypeByName(name:String) : Datatype? {
+		return this._datatypes[name]
 	}
 
 }

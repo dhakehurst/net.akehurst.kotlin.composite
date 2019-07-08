@@ -130,20 +130,23 @@ class KompositeWalker<P : Any?, A : Any?>(
     protected fun walkObject(key:Any,info: WalkInfo<P, A>, obj: Any): WalkInfo<P, A> {
         //TODO: use qualified name when we can
         val cls = obj::class
-        val dt: Datatype = registry.findDatatypeByName(cls.simpleName!!)
+        val dt = registry.findDatatypeByName(cls.simpleName!!)
+        if (null==dt) {
+            throw KompositeException("Cannot find datatype for ${cls}, is it in the datatype configuration")
+        } else {
+            val infoob = this.objectBegin(key, info, obj, dt)
+            var acc = infoob.acc
 
-        val infoob = this.objectBegin(key,info, obj, dt)
-        var acc = infoob.acc
-
-        cls.reflect().allPropertyNames(obj).forEach {
-            val prop = dt.allProperty[it] ?: DatatypePropertySimple(dt, it) //default is a reference property
-            val propValue = prop.get(obj)
-            val infopb = this.propertyBegin(it,WalkInfo(infoob.path, acc), prop)
-            val infowp = this.walkPropertyValue(it,WalkInfo(infoob.path, infopb.acc), prop, propValue)
-            val infope = this.propertyEnd(it,WalkInfo(infoob.path, infowp.acc), prop)
-            acc = infope.acc
+            cls.reflect().allPropertyNames(obj).forEach {
+                val prop = dt.allProperty[it] ?: DatatypePropertySimple(dt, it) //default is a reference property
+                val propValue = prop.get(obj)
+                val infopb = this.propertyBegin(it, WalkInfo(infoob.path, acc), prop)
+                val infowp = this.walkPropertyValue(it, WalkInfo(infoob.path, infopb.acc), prop, propValue)
+                val infope = this.propertyEnd(it, WalkInfo(infoob.path, infowp.acc), prop)
+                acc = infope.acc
+            }
+            return this.objectEnd(key, WalkInfo(infoob.path, acc), obj, dt)
         }
-        return this.objectEnd(key,WalkInfo(infoob.path, acc), obj, dt)
     }
 
     protected fun walkCollection(key:Any,info: WalkInfo<P, A>, coll: Collection<*>): WalkInfo<P, A>{
