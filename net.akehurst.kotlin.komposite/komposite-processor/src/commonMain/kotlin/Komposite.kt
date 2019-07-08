@@ -34,8 +34,9 @@ object Komposite {
                 model = namespace* ;
                 namespace = 'namespace' path '{' declaration* '}' ;
                 path = [ NAME / '.']+ ;
-                declaration = primitive | datatype ;
+                declaration = primitive | collection | datatype ;
                 primitive = 'primitive' NAME ;
+                collection = 'collection' NAME ;
                 datatype = 'datatype' NAME '{' property* '}' ;
                 property = NAME '{' characteristic+ '}' ;
                 characteristic =  characteristicValue | identity ;

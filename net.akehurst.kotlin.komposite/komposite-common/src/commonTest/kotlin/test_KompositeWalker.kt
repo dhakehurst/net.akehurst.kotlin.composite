@@ -14,14 +14,14 @@ class test_KompositeWalker {
     fun walk_null() {
         val reg = DatatypeRegistry()
         val sut = kompositeWalker<String?, String>(reg) {
-            nullValue() { info->
-                WalkInfo(null, "null")
+            nullValue() { key,info->
+                WalkInfo(key.toString(), "null")
             }
         }
 
         val actual = sut.walk(WalkInfo(null, ""), null)
 
-        val expected = WalkInfo<String?, String>(null, "null")
+        val expected = WalkInfo<String?, String>("", "null")
 
         assertEquals( expected, actual)
     }
@@ -43,19 +43,19 @@ class test_KompositeWalker {
 
         var result = ""
         val sut = kompositeWalker<String, String>(reg) {
-            objectBegin { info, obj, datatype ->
+            objectBegin { key,info, obj, datatype ->
                 result += "${datatype.name} { "
                 info
             }
-            objectEnd { info, obj, datatype ->
+            objectEnd { key,info, obj, datatype ->
                 result += "}"
                 info
             }
-            propertyBegin { info, property ->
+            propertyBegin { key,info, property ->
                 result += "${property.name} = "
                 info
             }
-            primitive { info, value ->
+            primitive { key,info, value ->
                 when(value) {
                     is String -> result += "'${value.toString()}' "
                 }

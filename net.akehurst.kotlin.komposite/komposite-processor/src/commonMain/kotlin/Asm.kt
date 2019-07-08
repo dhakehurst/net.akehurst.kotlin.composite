@@ -1,6 +1,8 @@
 package net.akehurst.kotlin.komposite.processor
 
 import net.akehurst.kotlin.komposite.api.*
+import net.akehurst.kotlinx.reflect.ModuleRegistry
+import kotlin.reflect.KClass
 
 class DatatypeModelSimple : DatatypeModel {
     private val _namespaces = mutableListOf<Namespace>()
@@ -19,18 +21,26 @@ data class NamespaceSimple(
 
     private val _declaration = mutableMapOf<String, Declaration>()
 
-    override val declaration:Map<String,Declaration> = _declaration
+    override val declaration: Map<String, Declaration> = _declaration
 
     fun addDeclaration(value: Declaration) {
         this._declaration[value.name] = value
     }
 
+    override fun qualifiedName(separator: String): String {
+        return this.path.joinToString(separator)
+    }
 }
 
-data class PrimitiveSimple(
+data class PrimitiveTypeSimple(
         override val namespace: Namespace,
         override val name: String
-) : Primitive
+) : PrimitiveType
+
+data class CollectionTypeSimple(
+        override val namespace: Namespace,
+        override val name: String
+) : CollectionType
 
 data class DatatypeSimple(
         override val namespace: Namespace,
@@ -40,15 +50,21 @@ data class DatatypeSimple(
     private val _superTypes = mutableListOf<Datatype>()
     private val _property = mutableMapOf<String, DatatypeProperty>()
 
+    override val clazz: KClass<*>
+        get() = ModuleRegistry.classForName(this.qualifiedName("."))
+
     override val superTypes: List<Datatype> = _superTypes
 
     override val property: Map<String, DatatypeProperty> = _property
 
     override val identityProperties: List<DatatypeProperty>
         get() {
-            return property.values.filter { it.isIdentity }
+            return property.values.filter { it.isIdentity }.sortedBy { it.identityIndex }
         }
-
+    override val nonIdentityProperties: Set<DatatypeProperty>
+        get() {
+            return property.values.filter { it.isIdentity.not() }.toSet()
+        }
     override val compositeProperties: Set<DatatypeProperty>
         get() {
             return property.values.filter { it.isComposite }.toSet()
@@ -73,6 +89,9 @@ data class DatatypeSimple(
         _property[value.name] = value
     }
 
+    override fun qualifiedName(separator: String): String {
+        return this.namespace.qualifiedName(separator) + separator + this.name
+    }
 }
 
 data class DatatypePropertySimple(
@@ -82,7 +101,7 @@ data class DatatypePropertySimple(
     private var _isComposite = false
     private var _identityIndex = -1
 
-    override val isIdentity: Boolean get() = -1 == _identityIndex
+    override val isIdentity: Boolean get() = -1 != _identityIndex
     override val identityIndex: Int get() = _identityIndex
 
     override var isComposite: Boolean

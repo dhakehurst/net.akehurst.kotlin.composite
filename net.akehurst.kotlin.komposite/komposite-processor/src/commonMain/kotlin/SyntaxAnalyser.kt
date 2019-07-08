@@ -20,6 +20,7 @@ class SyntaxAnalyser : SyntaxAnalyserAbstract() {
         this.register("path", this::path as BranchHandler<List<String>>)
         this.register("declaration", this::declaration as BranchHandler<Declaration>)
         this.register("primitive", this::primitive as BranchHandler<Datatype>)
+        this.register("collection", this::collection as BranchHandler<Datatype>)
         this.register("datatype", this::datatype as BranchHandler<Datatype>)
         this.register("property", this::property as BranchHandler<DatatypeProperty>)
         this.register("characteristic", this::characteristic as BranchHandler<Datatype>)
@@ -63,16 +64,24 @@ class SyntaxAnalyser : SyntaxAnalyserAbstract() {
         return children[0].branchNonSkipChildren.map { it.nonSkipMatchedText }
     }
 
-    // declaration = primitive | datatype ;
+    // declaration = primitive | collection | datatype ;
     fun declaration(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): Declaration {
         return super.transform(children[0], arg)
     }
 
     // primitive = 'primitive' NAME ;
-    fun primitive(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): Primitive {
+    fun primitive(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): PrimitiveType {
         val namespace = arg as Namespace
         val name = children[0].nonSkipMatchedText
-        val result = PrimitiveSimple(namespace, name)
+        val result = PrimitiveTypeSimple(namespace, name)
+        return result
+    }
+
+    // collection = 'primitive' NAME ;
+    fun collection(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): CollectionType {
+        val namespace = arg as Namespace
+        val name = children[0].nonSkipMatchedText
+        val result = CollectionTypeSimple(namespace, name)
         return result
     }
 
