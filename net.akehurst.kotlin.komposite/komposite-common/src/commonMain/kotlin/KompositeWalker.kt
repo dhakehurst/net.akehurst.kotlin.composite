@@ -26,7 +26,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         val collBegin: (key:Any,info: WalkInfo<P, A>, list: Collection<*>) -> WalkInfo<P, A>,
         val collSeparate: (key:Any,info: WalkInfo<P, A>, list: Collection<*>, previousElement: Any?) -> WalkInfo<P, A>,
         val collEnd: (key:Any,info: WalkInfo<P, A>, list: Collection<*>) -> WalkInfo<P, A>,
-        val reference: (key:Any,info: WalkInfo<P, A>, value: Any?, property: DatatypeProperty) -> WalkInfo<P, A>,
+        val reference: (key:Any,info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A>,
         val primitive: (key:Any,info: WalkInfo<P, A>, value: Any) -> WalkInfo<P, A>,
         val nullValue: (key:Any, info: WalkInfo<P, A>) -> WalkInfo<P, A>
 ) {
@@ -47,7 +47,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         private var _collBegin: (key:Any,info: WalkInfo<P, A>, list: Collection<*>) -> WalkInfo<P, A>  = { _,info, _ -> info }
         private var _collSeparate: (key:Any,info: WalkInfo<P, A>, list: Collection<*>, previousElement: Any?) -> WalkInfo<P, A> = { _,info, _, _ -> info }
         private var _collEnd: (key:Any,info: WalkInfo<P, A>, list: Collection<*>) -> WalkInfo<P, A>  = { _,info, _ -> info }
-        private var _reference: (key:Any,info: WalkInfo<P, A>, value: Any?, property: DatatypeProperty) -> WalkInfo<P, A> = { _,info, _, _ -> info }
+        private var _reference: (key:Any,info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A> = { _,info, _, _ -> info }
         private var _primitive: (key:Any,info: WalkInfo<P, A>, value: Any) -> WalkInfo<P, A> = { _,info, _ -> info }
         private var _nullValue: (key:Any,info: WalkInfo<P, A>) -> WalkInfo<P, A> = { _,info -> info }
 
@@ -79,7 +79,7 @@ class KompositeWalker<P : Any?, A : Any?>(
             this._collEnd = func
         }
 
-        fun reference(func: (key:Any,info: WalkInfo<P, A>, value: Any?, property: DatatypeProperty) -> WalkInfo<P, A> ) {
+        fun reference(func: (key:Any,info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A> ) {
             this._reference = func
         }
 
@@ -139,11 +139,15 @@ class KompositeWalker<P : Any?, A : Any?>(
 
             cls.reflect().allPropertyNames(obj).forEach {
                 val prop = dt.allProperty[it] ?: DatatypePropertySimple(dt, it) //default is a reference property
-                val propValue = prop.get(obj)
-                val infopb = this.propertyBegin(it, WalkInfo(infoob.path, acc), prop)
-                val infowp = this.walkPropertyValue(it, WalkInfo(infoob.path, infopb.acc), prop, propValue)
-                val infope = this.propertyEnd(it, WalkInfo(infoob.path, infowp.acc), prop)
-                acc = infope.acc
+                if (prop.ignore) {
+                    //TODO: log!
+                } else {
+                    val propValue = prop.get(obj)
+                    val infopb = this.propertyBegin(it, WalkInfo(infoob.path, acc), prop)
+                    val infowp = this.walkPropertyValue(it, WalkInfo(infoob.path, infopb.acc), prop, propValue)
+                    val infope = this.propertyEnd(it, WalkInfo(infoob.path, infowp.acc), prop)
+                    acc = infope.acc
+                }
             }
             return this.objectEnd(key, WalkInfo(infoob.path, acc), obj, dt)
         }
@@ -164,7 +168,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         return this.collEnd(key,infole, coll)
     }
 
-    protected fun walkReference(key:Any,info:WalkInfo<P, A>, property: DatatypeProperty, propValue: Any?): WalkInfo<P, A> {
+    protected fun walkReference(key:Any,info:WalkInfo<P, A>, property: DatatypeProperty, propValue: Any): WalkInfo<P, A> {
         return this.reference(key,info, propValue, property)
     }
 
