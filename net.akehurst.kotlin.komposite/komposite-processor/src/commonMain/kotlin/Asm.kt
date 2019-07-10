@@ -35,12 +35,20 @@ data class NamespaceSimple(
 data class PrimitiveTypeSimple(
         override val namespace: Namespace,
         override val name: String
-) : PrimitiveType
+) : PrimitiveType {
+    override fun qualifiedName(separator: String): String {
+        return this.namespace.qualifiedName(separator) + separator + this.name
+    }
+}
 
 data class CollectionTypeSimple(
         override val namespace: Namespace,
         override val name: String
-) : CollectionType
+) : CollectionType {
+    override fun qualifiedName(separator: String): String {
+        return this.namespace.qualifiedName(separator) + separator + this.name
+    }
+}
 
 data class DatatypeSimple(
         override val namespace: Namespace,

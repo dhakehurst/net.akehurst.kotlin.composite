@@ -6,6 +6,39 @@ import net.akehurst.kotlin.komposite.processor.Komposite
 
 class DatatypeRegistry {
 
+	companion object {
+		val KOTLIN_STD = """
+            namespace kotlin {
+                primitive Boolean
+                primitive Int
+                primitive Long
+                primitive Float
+                primitive Double
+                primitive String
+            }
+        """.trimIndent()
+
+		val JAVA_STD = """
+            namespace java.lang {
+                primitive Boolean
+                primitive Integer
+                primitive Long
+                primitive Float
+                primitive Double
+                primitive String
+            }
+    
+            namespace java.util {
+                collection List
+                collection ArrayList
+                collection Set
+                collection HashSet
+                collection Map
+                collection HashMap
+            }
+        """.trimIndent()
+	}
+
     private val _datatypes = mutableMapOf<String, Datatype>()
 	private val _collection = mutableMapOf<String,CollectionType>()
 	private val _primitive = mutableMapOf<String,PrimitiveType>()
@@ -30,7 +63,7 @@ class DatatypeRegistry {
 	}
 
 	fun isCollection(value:Any) : Boolean {
-		//TODO: use type hierachy so we can e.g. register List rather thabn ArrayList
+		//TODO: use type hierachy so we can e.g. register List rather than ArrayList
 		return this._collection.containsKey(value::class.simpleName)
 	}
 
@@ -41,5 +74,15 @@ class DatatypeRegistry {
 	fun findDatatypeByName(name:String) : Datatype? {
 		return this._datatypes[name]
 	}
-
+	fun findDatatypeByClass(cls:KClass<*>) : Datatype? {
+		//TODO: use qualified name where possible
+		return this._datatypes[cls.simpleName]
+	}
+	fun findPrimitiveByName(name:String) : PrimitiveType? {
+		return this._primitive[name]
+	}
+	fun findPrimitiveByClass(cls:KClass<*>) : PrimitiveType? {
+		//TODO: use qualified name where possible
+		return this._primitive[cls.simpleName]
+	}
 }

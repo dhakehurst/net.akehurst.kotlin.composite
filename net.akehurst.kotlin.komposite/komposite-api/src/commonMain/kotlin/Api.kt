@@ -23,11 +23,11 @@ interface Declaration {
 }
 
 interface PrimitiveType : Declaration {
-
+    fun qualifiedName(separator: String): String
 }
 
 interface CollectionType : Declaration {
-
+    fun qualifiedName(separator: String): String
 }
 
 interface Datatype : Declaration {

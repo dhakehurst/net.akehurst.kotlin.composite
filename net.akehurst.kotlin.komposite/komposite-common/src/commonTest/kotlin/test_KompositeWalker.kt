@@ -27,6 +27,56 @@ class test_KompositeWalker {
     }
 
     @Test
+    fun walk_Map() {
+
+        val map = mapOf<String, Int>(
+                "a" to 1,
+                "b" to 2,
+                "c" to 3
+        )
+
+        var result = ""
+        val reg = DatatypeRegistry()
+        reg.registerFromConfigString("""
+            namespace kotlin {
+                primitive Int
+            }
+            namespace kotlin.collections {
+               collection LinkedHashMap
+            }
+        """)
+        val sut = kompositeWalker<String, String>(reg) {
+            primitive { key,info, value ->
+                when(value) {
+                    is Int -> result += "${value}"
+                }
+                info
+            }
+            mapBegin { key, info, map ->
+                result += "Map { "
+                info
+            }
+            mapEntryBegin { key, info, entry ->
+                result += "$key = "
+                info
+            }
+            mapEntryEnd { key, info, entry ->  info}
+            mapSeparate { key, info, map, previousEntry ->
+                result += ", "
+                info
+            }
+            mapEnd { key, info, map ->
+                result += " }"
+                info
+            }
+        }
+
+        val actual = sut.walk(WalkInfo("", ""), map)
+        val expected = "Map { a = 1, b = 2, c = 3 }"
+        assertEquals(expected, result)
+    }
+
+    @Test
     fun walk_object() {
 
         val obj1 = A()
@@ -48,7 +98,7 @@ class test_KompositeWalker {
                 info
             }
             objectEnd { key,info, obj, datatype ->
-                result += "}"
+                result += " }"
                 info
             }
             propertyBegin { key,info, property ->
@@ -57,7 +107,7 @@ class test_KompositeWalker {
             }
             primitive { key,info, value ->
                 when(value) {
-                    is String -> result += "'${value.toString()}' "
+                    is String -> result += "'${value}'"
                 }
 
                 info
