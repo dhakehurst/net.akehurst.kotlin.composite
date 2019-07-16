@@ -40,6 +40,7 @@ class test_KompositeWalker {
         reg.registerFromConfigString("""
             namespace kotlin {
                 primitive Int
+                primitive String
             }
             namespace kotlin.collections {
                collection LinkedHashMap
@@ -49,6 +50,7 @@ class test_KompositeWalker {
             primitive { key,info, value ->
                 when(value) {
                     is Int -> result += "${value}"
+                    is String -> result += "'${value}'"
                 }
                 info
             }
@@ -56,11 +58,19 @@ class test_KompositeWalker {
                 result += "Map { "
                 info
             }
-            mapEntryBegin { key, info, entry ->
-                result += "$key = "
+            mapEntryKeyBegin { key, info, entry ->
+                result += "["
                 info
             }
-            mapEntryEnd { key, info, entry ->  info}
+            mapEntryKeyEnd { key, info, entry ->
+                result += "]"
+                info
+            }
+            mapEntryValueBegin { key, info, entry ->
+                result += " = "
+                info
+            }
+            mapEntryValueEnd { key, info, entry ->  info}
             mapSeparate { key, info, map, previousEntry ->
                 result += ", "
                 info
@@ -72,7 +82,7 @@ class test_KompositeWalker {
         }
 
         val actual = sut.walk(WalkInfo("", ""), map)
-        val expected = "Map { a = 1, b = 2, c = 3 }"
+        val expected = "Map { ['a'] = 1, ['b'] = 2, ['c'] = 3 }"
         assertEquals(expected, result)
     }
 

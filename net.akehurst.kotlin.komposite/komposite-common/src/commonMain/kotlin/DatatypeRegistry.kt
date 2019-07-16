@@ -10,11 +10,25 @@ class DatatypeRegistry {
 		val KOTLIN_STD = """
             namespace kotlin {
                 primitive Boolean
+                primitive Byte
+                primitive Short
                 primitive Int
                 primitive Long
                 primitive Float
                 primitive Double
                 primitive String
+            }
+            namespace kotlin.collection {
+                collection Collection
+                collection List
+				collection EmptyList
+                collection ArrayList
+                collection Set
+				collection EmptySet
+                collection LinkedHashSet
+                collection Map
+				collection EmptyMap
+                collection LinkedHashMap
             }
         """.trimIndent()
 
@@ -35,6 +49,7 @@ class DatatypeRegistry {
                 collection HashSet
                 collection Map
                 collection HashMap
+                collection LinkedHashMap
             }
         """.trimIndent()
 	}
