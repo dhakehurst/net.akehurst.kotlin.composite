@@ -18,12 +18,17 @@ package net.akehurst.kotlin.komposite.common
 
 import net.akehurst.kotlin.komposite.api.Datatype
 import net.akehurst.kotlin.komposite.api.DatatypeProperty
+import net.akehurst.kotlin.komposite.api.KompositeException
 import net.akehurst.kotlinx.reflect.reflect
 
 fun Datatype.construct(vararg constructorArgs: Any?): Any {
-    val cls = this.clazz
-    val obj = cls.reflect().construct(*constructorArgs)
-    return obj
+    try {
+        val cls = this.clazz
+        val obj = cls.reflect().construct(*constructorArgs)
+        return obj
+    } catch (t: Throwable) {
+        throw KompositeException("Unable to construct ${this.name} from ${constructorArgs.toList()} due to ${t.message ?: "Unknown"}")
+    }
 }
 
 fun DatatypeProperty.get(obj: Any): Any? {
@@ -33,7 +38,11 @@ fun DatatypeProperty.get(obj: Any): Any? {
 }
 
 fun DatatypeProperty.set(obj: Any, value: Any?) {
-    val cls = obj::class
-    val reflect = cls.reflect()
-    reflect.setProperty(this.name, obj, value)
+    try {
+        val cls = obj::class
+        val reflect = cls.reflect()
+        reflect.setProperty(this.name, obj, value)
+    } catch (t: Throwable) {
+        throw KompositeException("Unable to set property ${this.name} to ${value} due to ${t.message ?: "Unknown"}")
+    }
 }

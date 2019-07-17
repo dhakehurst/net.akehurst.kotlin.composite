@@ -283,12 +283,12 @@ class KompositeWalker<P : Any?, A : Any?>(
     }
 
     protected fun walkMapEntryKey(owningProperty: DatatypeProperty?, key: Any, info: WalkInfo<P, A>, value: Any?): WalkInfo<P, A> {
+        //key should always be a primitive or a reference, unless owning property is null! (i.e. map is the root)...I think !
         return when {
             null == value -> walkNull(key, info)
             registry.isPrimitive(value) -> walkPrimitive(key, info, value)
-            null==owningProperty || owningProperty.isComposite -> walkValue(owningProperty, key, info, value)
-            owningProperty.isReference -> walkReference(owningProperty, key, info, value)
-            else -> throw KompositeException("Don't know how to walk Map element $owningProperty[${key}] = $value")
+            null==owningProperty -> walkValue(owningProperty, key, info, value)
+            else -> walkReference(owningProperty, key, info, value)
         }
     }
 
