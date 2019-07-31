@@ -33,7 +33,7 @@ class SyntaxAnalyser : SyntaxAnalyserAbstract() {
         this.register("model", this::model as BranchHandler<DatatypeModel>)
         this.register("namespace", this::namespace as BranchHandler<Namespace>)
         this.register("path", this::path as BranchHandler<List<String>>)
-        this.register("declaration", this::declaration as BranchHandler<Declaration>)
+        this.register("declaration", this::declaration as BranchHandler<TypeDeclaration>)
         this.register("primitive", this::primitive as BranchHandler<Datatype>)
         this.register("collection", this::collection as BranchHandler<Datatype>)
         this.register("datatype", this::datatype as BranchHandler<Datatype>)
@@ -68,7 +68,7 @@ class SyntaxAnalyser : SyntaxAnalyserAbstract() {
         val path = super.transform<List<String>>(children[0], arg)
         val result = NamespaceSimple(path)
         children[1].branchNonSkipChildren.forEach {
-            val dt = super.transform<Declaration>(it, result)
+            val dt = super.transform<TypeDeclaration>(it, result)
             result.addDeclaration(dt)
         }
         return result
@@ -80,7 +80,7 @@ class SyntaxAnalyser : SyntaxAnalyserAbstract() {
     }
 
     // declaration = primitive | collection | datatype ;
-    fun declaration(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): Declaration {
+    fun declaration(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): TypeDeclaration {
         return super.transform(children[0], arg)
     }
 

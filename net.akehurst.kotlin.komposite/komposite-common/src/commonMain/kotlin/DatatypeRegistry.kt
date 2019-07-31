@@ -76,6 +76,7 @@ class DatatypeRegistry {
 
 	fun registerFromConfigString(datatypeModel:String) {
 		try {
+			//TODO: use qualified names when kotlin JS reflection supports qualifiedName
 			val dtm:DatatypeModel = Komposite.process(datatypeModel)
 			dtm.namespaces.forEach { ns->
 				_primitive += ns.declaration.values.filterIsInstance<PrimitiveType>().associate { Pair(it.name, it) }
@@ -95,7 +96,13 @@ class DatatypeRegistry {
 
 	fun isCollection(value:Any) : Boolean {
 		//TODO: use type hierachy so we can e.g. register List rather than ArrayList
-		return this._collection.containsKey(value::class.simpleName)
+		return when (value) {
+			is List<*> -> this._collection.containsKey("List")
+			is Set<*> -> this._collection.containsKey("Set")
+			is Map<*,*> -> this._collection.containsKey("Map")
+			is Collection<*> -> this._collection.containsKey("Collection")
+			else -> this._collection.containsKey(value::class.simpleName)
+		}
 	}
 
 	fun hasDatatypeInfo(value:Any) :Boolean {

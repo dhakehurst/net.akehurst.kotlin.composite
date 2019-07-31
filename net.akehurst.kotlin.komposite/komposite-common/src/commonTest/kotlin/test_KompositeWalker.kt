@@ -59,7 +59,7 @@ class test_KompositeWalker {
                 primitive String
             }
             namespace kotlin.collections {
-               collection LinkedHashMap
+               collection Map
             }
         """)
         val sut = kompositeWalker<String, String>(reg) {
@@ -108,6 +108,7 @@ class test_KompositeWalker {
         val obj1 = A()
 
         val reg = DatatypeRegistry()
+
         reg.registerFromConfigString("""
             namespace net.akehurst.kotlin.komposite.common {
                primitive String

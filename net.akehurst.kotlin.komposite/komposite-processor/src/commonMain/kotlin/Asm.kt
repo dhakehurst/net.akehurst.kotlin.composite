@@ -35,11 +35,11 @@ data class NamespaceSimple(
         override val path: List<String>
 ) : Namespace {
 
-    private val _declaration = mutableMapOf<String, Declaration>()
+    private val _declaration = mutableMapOf<String, TypeDeclaration>()
 
-    override val declaration: Map<String, Declaration> = _declaration
+    override val declaration: Map<String, TypeDeclaration> = _declaration
 
-    fun addDeclaration(value: Declaration) {
+    fun addDeclaration(value: TypeDeclaration) {
         this._declaration[value.name] = value
     }
 

@@ -29,24 +29,24 @@ interface DatatypeModel {
 
 interface Namespace {
     val path: List<String>
-    val declaration: Map<String, Declaration>
+    val declaration: Map<String, TypeDeclaration>
     fun qualifiedName(separator: String): String
 }
 
-interface Declaration {
+interface TypeDeclaration {
     val namespace: Namespace
     val name: String
 }
 
-interface PrimitiveType : Declaration {
+interface PrimitiveType : TypeDeclaration {
     fun qualifiedName(separator: String): String
 }
 
-interface CollectionType : Declaration {
+interface CollectionType : TypeDeclaration {
     fun qualifiedName(separator: String): String
 }
 
-interface Datatype : Declaration {
+interface Datatype : TypeDeclaration {
 
     val clazz: KClass<*>
 
