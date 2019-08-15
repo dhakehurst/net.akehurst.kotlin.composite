@@ -16,11 +16,13 @@
 
 package net.akehurst.kotlin.komposite.common
 
+import net.akehurst.kotlin.komposite.api.CollectionType
 import net.akehurst.kotlin.komposite.api.Datatype
 import net.akehurst.kotlin.komposite.api.DatatypeProperty
 import net.akehurst.kotlin.komposite.api.KompositeException
 import net.akehurst.kotlin.komposite.processor.DatatypePropertySimple
 import net.akehurst.kotlinx.reflect.reflect
+import kotlin.reflect.KClass
 
 inline fun <P : Any?, A : Any?> kompositeWalker(registry: DatatypeRegistry, init: KompositeWalker.Builder<P, A>.() -> Unit): KompositeWalker<P, A> {
     val builder = KompositeWalker.Builder<P, A>()
@@ -46,11 +48,11 @@ class KompositeWalker<P : Any?, A : Any?>(
         val mapEntryValueEnd: (key: Any, info: WalkInfo<P, A>, entry: Map.Entry<*, *>) -> WalkInfo<P, A>,
         val mapSeparate: (key: Any, info: WalkInfo<P, A>, map: Map<*, *>, previousEntry: Map.Entry<*, *>) -> WalkInfo<P, A>,
         val mapEnd: (key: Any, info: WalkInfo<P, A>, map: Map<*, *>) -> WalkInfo<P, A>,
-        val collBegin: (key: Any, info: WalkInfo<P, A>, list: Collection<*>) -> WalkInfo<P, A>,
+        val collBegin: (key: Any, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A>,
         val collElementBegin: (key: Any, info: WalkInfo<P, A>, element: Any?) -> WalkInfo<P, A>,
         val collElementEnd: (key: Any, info: WalkInfo<P, A>, element: Any?) -> WalkInfo<P, A>,
-        val collSeparate: (key: Any, info: WalkInfo<P, A>, list: Collection<*>, previousElement: Any?) -> WalkInfo<P, A>,
-        val collEnd: (key: Any, info: WalkInfo<P, A>, list: Collection<*>) -> WalkInfo<P, A>,
+        val collSeparate: (key: Any, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A>,
+        val collEnd: (key: Any, info: WalkInfo<P, A>, type:CollectionType, coll: Collection<*>) -> WalkInfo<P, A>,
         val reference: (key: Any, info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A>,
         val primitive: (key: Any, info: WalkInfo<P, A>, value: Any) -> WalkInfo<P, A>,
         val nullValue: (key: Any, info: WalkInfo<P, A>) -> WalkInfo<P, A>
@@ -76,11 +78,11 @@ class KompositeWalker<P : Any?, A : Any?>(
         private var _mapEntryValueEnd: (key: Any, info: WalkInfo<P, A>, entry: Map.Entry<*, *>) -> WalkInfo<P, A> = { _, info, _ -> info }
         private var _mapSeparate: (key: Any, info: WalkInfo<P, A>, map: Map<*, *>, previousEntry: Map.Entry<*, *>) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _mapEnd: (key: Any, info: WalkInfo<P, A>, map: Map<*, *>) -> WalkInfo<P, A> = { _, info, _ -> info }
-        private var _collBegin: (key: Any, info: WalkInfo<P, A>, list: Collection<*>) -> WalkInfo<P, A> = { _, info, _ -> info }
+        private var _collBegin: (key: Any, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _collElementBegin: (key: Any, info: WalkInfo<P, A>, element: Any?) -> WalkInfo<P, A> = { _, info, _ -> info }
         private var _collElementEnd: (key: Any, info: WalkInfo<P, A>, element: Any?) -> WalkInfo<P, A> = { _, info, _ -> info }
-        private var _collSeparate: (key: Any, info: WalkInfo<P, A>, list: Collection<*>, previousElement: Any?) -> WalkInfo<P, A> = { _, info, _, _ -> info }
-        private var _collEnd: (key: Any, info: WalkInfo<P, A>, list: Collection<*>) -> WalkInfo<P, A> = { _, info, _ -> info }
+        private var _collSeparate: (key: Any, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A> = { _, info, _, _, _ -> info }
+        private var _collEnd: (key: Any, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _reference: (key: Any, info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _primitive: (key: Any, info: WalkInfo<P, A>, value: Any) -> WalkInfo<P, A> = { _, info, _ -> info }
         private var _nullValue: (key: Any, info: WalkInfo<P, A>) -> WalkInfo<P, A> = { _, info -> info }
@@ -112,6 +114,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         fun mapEntryKeyEnd(func: (key: Any, info: WalkInfo<P, A>, entry: Map.Entry<*, *>) -> WalkInfo<P, A>) {
             this._mapEntryKeyEnd = func
         }
+
         fun mapEntryValueBegin(func: (key: Any, info: WalkInfo<P, A>, entry: Map.Entry<*, *>) -> WalkInfo<P, A>) {
             this._mapEntryValueBegin = func
         }
@@ -119,6 +122,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         fun mapEntryValueEnd(func: (key: Any, info: WalkInfo<P, A>, entry: Map.Entry<*, *>) -> WalkInfo<P, A>) {
             this._mapEntryValueEnd = func
         }
+
         fun mapSeparate(func: (key: Any, info: WalkInfo<P, A>, map: Map<*, *>, previousEntry: Map.Entry<*, *>) -> WalkInfo<P, A>) {
             this._mapSeparate = func
         }
@@ -127,20 +131,23 @@ class KompositeWalker<P : Any?, A : Any?>(
             this._mapEnd = func
         }
 
-        fun collBegin(func: (key: Any, info: WalkInfo<P, A>, coll: Collection<*>) -> WalkInfo<P, A>) {
+        fun collBegin(func: (key: Any, info: WalkInfo<P, A>, type:CollectionType, coll: Collection<*>) -> WalkInfo<P, A>) {
             this._collBegin = func
         }
+
         fun collElementBegin(func: (key: Any, info: WalkInfo<P, A>, element: Any?) -> WalkInfo<P, A>) {
             this._collElementBegin = func
         }
+
         fun collElementEnd(func: (key: Any, info: WalkInfo<P, A>, element: Any?) -> WalkInfo<P, A>) {
             this._collElementEnd = func
         }
-        fun collSeparate(func: (key: Any, info: WalkInfo<P, A>, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A>) {
+
+        fun collSeparate(func: (key: Any, info: WalkInfo<P, A>, type:CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A>) {
             this._collSeparate = func
         }
 
-        fun collEnd(func: (key: Any, info: WalkInfo<P, A>, coll: Collection<*>) -> WalkInfo<P, A>) {
+        fun collEnd(func: (key: Any, info: WalkInfo<P, A>, type:CollectionType, coll: Collection<*>) -> WalkInfo<P, A>) {
             this._collEnd = func
         }
 
@@ -220,23 +227,25 @@ class KompositeWalker<P : Any?, A : Any?>(
     }
 
     protected fun walkCollection(owningProperty: DatatypeProperty?, key: Any, info: WalkInfo<P, A>, obj: Any): WalkInfo<P, A> {
+        val collDt = this.registry.findCollectionTypeFor(obj) ?: throw KompositeException("CollectionType not found for ${obj::class}")
         return when (obj) {
-            is Collection<*> -> walkColl(owningProperty, key, info, obj)
-            is Map<*, *> -> walkMap(owningProperty, key, info, obj)
+            is Array<*> -> walkColl(owningProperty, key, info, collDt, obj.toList())
+            is Collection<*> -> walkColl(owningProperty, key, info, collDt, obj)
+            is Map<*, *> -> walkMap(owningProperty, key, info, collDt, obj)
             else -> throw KompositeException("Don't know how to walk collection of type ${obj::class.simpleName}")
         }
     }
 
-    protected fun walkColl(owningProperty: DatatypeProperty?, key: Any, info: WalkInfo<P, A>, coll: Collection<*>): WalkInfo<P, A> {
-        val infolb = this.collBegin(key, info, coll)
+    protected fun walkColl(owningProperty: DatatypeProperty?, key: Any, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>): WalkInfo<P, A> {
+        val infolb = this.collBegin(key, info, type, coll)
         var acc = infolb.acc
         coll.forEachIndexed { index, element ->
             val infobEl = WalkInfo(infolb.path, acc)
             val infoElb = this.collElementBegin(index, infobEl, element)
             val infoElv = this.walkCollValue(owningProperty, index, infoElb, element)
             val infoEle = this.collElementEnd(index, infoElv, element)
-            val infoEls = if (index < coll.size-1) {
-                val infoas = this.collSeparate(key, infoEle, coll, element)
+            val infoEls = if (index < coll.size - 1) {
+                val infoas = this.collSeparate(key, infoEle, type, coll, element)
                 WalkInfo(infoas.path, infoas.acc)
             } else {
                 //last one
@@ -245,20 +254,20 @@ class KompositeWalker<P : Any?, A : Any?>(
             acc = infoEls.acc
         }
         val infole = WalkInfo(infolb.path, acc)
-        return this.collEnd(key, infole, coll)
+        return this.collEnd(key, infole, type, coll)
     }
 
     protected fun walkCollValue(owningProperty: DatatypeProperty?, key: Any, info: WalkInfo<P, A>, value: Any?): WalkInfo<P, A> {
         return when {
             null == value -> walkNull(key, info)
             registry.isPrimitive(value) -> walkPrimitive(key, info, value)
-            null==owningProperty || owningProperty.isComposite -> walkValue(owningProperty, key, info, value)
+            null == owningProperty || owningProperty.isComposite -> walkValue(owningProperty, key, info, value)
             owningProperty.isReference -> walkReference(owningProperty, key, info, value)
             else -> throw KompositeException("Don't know how to walk Collection element $owningProperty[${key}] = $value")
         }
     }
 
-    protected fun walkMap(owningProperty: DatatypeProperty?, key: Any, info: WalkInfo<P, A>, map: Map<*, *>): WalkInfo<P, A> {
+    protected fun walkMap(owningProperty: DatatypeProperty?, key: Any, info: WalkInfo<P, A>, type: CollectionType, map: Map<*, *>): WalkInfo<P, A> {
         val infolb = this.mapBegin(key, info, map)
         var acc = infolb.acc
         map.entries.forEachIndexed { index, entry ->
@@ -269,7 +278,7 @@ class KompositeWalker<P : Any?, A : Any?>(
             val infomevb = this.mapEntryValueBegin(entry.key!!, infobEl, entry)
             val infomev = this.walkMapEntryValue(owningProperty, index, infomevb, entry.value)
             val infomeve = this.mapEntryValueEnd(entry.key!!, infomev, entry)
-            val infomes = if (index < map.size-1) {
+            val infomes = if (index < map.size - 1) {
                 val infoas = this.mapSeparate(key, infomeve, map, entry)
                 WalkInfo(infoas.path, infoas.acc)
             } else {
@@ -287,7 +296,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         return when {
             null == value -> walkNull(key, info)
             registry.isPrimitive(value) -> walkPrimitive(key, info, value)
-            null==owningProperty -> walkValue(owningProperty, key, info, value)
+            null == owningProperty -> walkValue(owningProperty, key, info, value)
             else -> walkReference(owningProperty, key, info, value)
         }
     }
@@ -296,7 +305,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         return when {
             null == value -> walkNull(key, info)
             registry.isPrimitive(value) -> walkPrimitive(key, info, value)
-            null==owningProperty || owningProperty.isComposite -> walkValue(owningProperty, key, info, value)
+            null == owningProperty || owningProperty.isComposite -> walkValue(owningProperty, key, info, value)
             owningProperty.isReference -> walkReference(owningProperty, key, info, value)
             else -> throw KompositeException("Don't know how to walk Map value $owningProperty[${key}] = $value")
         }

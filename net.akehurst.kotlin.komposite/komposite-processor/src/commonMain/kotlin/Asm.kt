@@ -18,6 +18,7 @@ package net.akehurst.kotlin.komposite.processor
 
 import net.akehurst.kotlin.komposite.api.*
 import net.akehurst.kotlinx.reflect.ModuleRegistry
+import net.akehurst.kotlinx.reflect.reflect
 import kotlin.reflect.KClass
 
 class DatatypeModelSimple : DatatypeModel {
@@ -61,6 +62,20 @@ data class CollectionTypeSimple(
         override val namespace: Namespace,
         override val name: String
 ) : CollectionType {
+
+    companion object {
+        //TODO: 'close' this set of instances
+        val ARRAY_TYPE = CollectionTypeSimple(NamespaceSimple(listOf("kotlin", "collections")), "Array")
+        val LIST_TYPE = CollectionTypeSimple(NamespaceSimple(listOf("kotlin", "collections")), "List")
+        val SET_TYPE = CollectionTypeSimple(NamespaceSimple(listOf("kotlin", "collections")), "Set")
+        val MAP_TYPE = CollectionTypeSimple(NamespaceSimple(listOf("kotlin", "collections")), "Map")
+    }
+
+    override val isArray = this== ARRAY_TYPE
+    override val isList = this== LIST_TYPE
+    override val isSet = this== SET_TYPE
+    override val isMap = this== MAP_TYPE
+
     override fun qualifiedName(separator: String): String {
         return this.namespace.qualifiedName(separator) + separator + this.name
     }
@@ -146,4 +161,7 @@ data class DatatypePropertySimple(
         this._identityIndex = value
     }
 
+    val type: TypeDeclaration get() {
+        TODO("needs kotlin JS reflection")
+    }
 }

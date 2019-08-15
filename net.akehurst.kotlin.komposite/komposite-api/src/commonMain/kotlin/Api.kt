@@ -43,6 +43,10 @@ interface PrimitiveType : TypeDeclaration {
 }
 
 interface CollectionType : TypeDeclaration {
+    val isArray: Boolean
+    val isList: Boolean
+    val isSet: Boolean
+    val isMap: Boolean
     fun qualifiedName(separator: String): String
 }
 

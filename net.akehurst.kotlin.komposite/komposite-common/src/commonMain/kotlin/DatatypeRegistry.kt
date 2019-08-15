@@ -34,17 +34,12 @@ class DatatypeRegistry {
                 primitive Double
                 primitive String
             }
-            namespace kotlin.collection {
+            namespace kotlin.collections {
+                collection Array
                 collection Collection
                 collection List
-				collection EmptyList
-                collection ArrayList
                 collection Set
-				collection EmptySet
-                collection LinkedHashSet
                 collection Map
-				collection EmptyMap
-                collection LinkedHashMap
             }
         """.trimIndent()
 
@@ -59,13 +54,11 @@ class DatatypeRegistry {
             }
     
             namespace java.util {
-                collection List
-                collection ArrayList
+                collection Array
+				collection Collection
+				collection List
                 collection Set
-                collection HashSet
                 collection Map
-                collection HashMap
-                collection LinkedHashMap
             }
         """.trimIndent()
 	}
@@ -101,6 +94,7 @@ class DatatypeRegistry {
 			is Set<*> -> this._collection.containsKey("Set")
 			is Map<*,*> -> this._collection.containsKey("Map")
 			is Collection<*> -> this._collection.containsKey("Collection")
+			is Array<*> -> this._collection.containsKey("Array")
 			else -> this._collection.containsKey(value::class.simpleName)
 		}
 	}
@@ -115,6 +109,17 @@ class DatatypeRegistry {
 	fun findDatatypeByClass(cls:KClass<*>) : Datatype? {
 		//TODO: use qualified name where possible
 		return this._datatypes[cls.simpleName]
+	}
+	fun findCollectionTypeFor(value:Any) : CollectionType? {
+		//TODO: use qualified name where possible
+		return when(value) {
+			is List<*> -> this._collection["List"]
+			is Set<*> -> this._collection["Set"]
+			is Map<*,*> -> this._collection["Map"]
+			is Collection<*> -> this._collection["Collection"]
+			is Array<*> -> this._collection["Array"]
+			else -> this._collection[value::class.simpleName]
+		}
 	}
 	fun findPrimitiveByName(name:String) : PrimitiveType? {
 		return this._primitive[name]
