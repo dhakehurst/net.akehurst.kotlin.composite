@@ -30,14 +30,14 @@ class test_KompositeWalker {
     fun walk_null() {
         val reg = DatatypeRegistry()
         val sut = kompositeWalker<String?, String>(reg) {
-            nullValue() { key,info->
-                WalkInfo(key.toString(), "null")
+            nullValue() { path,info->
+                WalkInfo(path.lastOrNull(), "null")
             }
         }
 
         val actual = sut.walk(WalkInfo(null, ""), null)
 
-        val expected = WalkInfo<String?, String>("", "null")
+        val expected = WalkInfo<String?, String>(null, "null")
 
         assertEquals( expected, actual)
     }
@@ -63,35 +63,35 @@ class test_KompositeWalker {
             }
         """)
         val sut = kompositeWalker<String, String>(reg) {
-            primitive { key,info, value ->
+            primitive { path,info, value ->
                 when(value) {
                     is Int -> result += "${value}"
                     is String -> result += "'${value}'"
                 }
                 info
             }
-            mapBegin { key, info, map ->
+            mapBegin { path, info, map ->
                 result += "Map { "
                 info
             }
-            mapEntryKeyBegin { key, info, entry ->
+            mapEntryKeyBegin { path, info, entry ->
                 result += "["
                 info
             }
-            mapEntryKeyEnd { key, info, entry ->
+            mapEntryKeyEnd { path, info, entry ->
                 result += "]"
                 info
             }
-            mapEntryValueBegin { key, info, entry ->
+            mapEntryValueBegin { path, info, entry ->
                 result += " = "
                 info
             }
-            mapEntryValueEnd { key, info, entry ->  info}
-            mapSeparate { key, info, map, previousEntry ->
+            mapEntryValueEnd { path, info, entry ->  info}
+            mapSeparate { path, info, map, previousEntry ->
                 result += ", "
                 info
             }
-            mapEnd { key, info, map ->
+            mapEnd { path, info, map ->
                 result += " }"
                 info
             }
@@ -120,19 +120,19 @@ class test_KompositeWalker {
 
         var result = ""
         val sut = kompositeWalker<String, String>(reg) {
-            objectBegin { key,info, obj, datatype ->
+            objectBegin { path,info, obj, datatype ->
                 result += "${datatype.name} { "
                 info
             }
-            objectEnd { key,info, obj, datatype ->
+            objectEnd { path,info, obj, datatype ->
                 result += " }"
                 info
             }
-            propertyBegin { key,info, property ->
+            propertyBegin { path,info, property ->
                 result += "${property.name} = "
                 info
             }
-            primitive { key,info, value ->
+            primitive { path,info, value ->
                 when(value) {
                     is String -> result += "'${value}'"
                 }

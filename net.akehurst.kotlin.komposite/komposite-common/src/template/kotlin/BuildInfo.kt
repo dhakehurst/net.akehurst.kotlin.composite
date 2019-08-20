@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.akehurst.language.processor
+package net.akehurst.kotlin.komposite.common
 
 object BuildInfo {
 
