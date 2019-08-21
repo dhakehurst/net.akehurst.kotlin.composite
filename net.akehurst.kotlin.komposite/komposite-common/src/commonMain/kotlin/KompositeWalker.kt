@@ -32,7 +32,7 @@ inline fun <P : Any?, A : Any?> kompositeWalker(registry: DatatypeRegistry, init
 }
 
 data class WalkInfo<P, A>(
-        val path: P,
+        val up: P,
         val acc: A
 )
 
@@ -215,14 +215,14 @@ class KompositeWalker<P : Any?, A : Any?>(
                 } else {
                     val propValue = prop.get(obj)
                     path.push(propName)
-                    val infopb = this.propertyBegin(path.elements, WalkInfo(infoob.path, acc), prop)
-                    val infowp = this.walkPropertyValue(prop, path, WalkInfo(infoob.path, infopb.acc), propValue)
-                    val infope = this.propertyEnd(path.elements, WalkInfo(infoob.path, infowp.acc), prop)
+                    val infopb = this.propertyBegin(path.elements, WalkInfo(infoob.up, acc), prop)
+                    val infowp = this.walkPropertyValue(prop, path, WalkInfo(infoob.up, infopb.acc), propValue)
+                    val infope = this.propertyEnd(path.elements, WalkInfo(infoob.up, infowp.acc), prop)
                     path.pop()
                     acc = infope.acc
                 }
             }
-            return this.objectEnd(path.elements, WalkInfo(infoob.path, acc), obj, dt)
+            return this.objectEnd(path.elements, WalkInfo(info.up, acc), obj, dt)
         }
     }
 
@@ -241,21 +241,21 @@ class KompositeWalker<P : Any?, A : Any?>(
         var acc = infolb.acc
         coll.forEachIndexed { index, element ->
             path.push(index.toString())
-            val infobEl = WalkInfo(infolb.path, acc)
+            val infobEl = WalkInfo(infolb.up, acc)
             val infoElb = this.collElementBegin(path.elements, infobEl, element)
             val infoElv = this.walkCollValue(owningProperty, path, infoElb, element)
             val infoEle = this.collElementEnd(path.elements, infoElv, element)
             val infoEls = if (index < coll.size - 1) {
                 val infoas = this.collSeparate(path.elements, infoEle, type, coll, element)
-                WalkInfo(infoas.path, infoas.acc)
+                WalkInfo(infolb.up, infoas.acc)
             } else {
                 //last one
-                WalkInfo(infoEle.path, infoEle.acc)
+                WalkInfo(infolb.up, infoEle.acc)
             }
             acc = infoEls.acc
             path.pop()
         }
-        val infole = WalkInfo(infolb.path, acc)
+        val infole = WalkInfo(infolb.up, acc)
         return this.collEnd(path.elements, infole, type, coll)
     }
 
@@ -273,7 +273,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         val infolb = this.mapBegin(path.elements, info, map)
         var acc = infolb.acc
         map.entries.forEachIndexed { index, entry ->
-            val infobEl = WalkInfo(infolb.path, acc)
+            val infobEl = WalkInfo(infolb.up, acc)
             path.push(index.toString())
             val infomekb = this.mapEntryKeyBegin(path.elements, infobEl, entry)
             val infomekv = this.walkMapEntryKey(owningProperty, path, infomekb, entry.key)
@@ -283,15 +283,15 @@ class KompositeWalker<P : Any?, A : Any?>(
             val infomeve = this.mapEntryValueEnd(path.elements, infomev, entry)
             val infomes = if (index < map.size - 1) {
                 val infoas = this.mapSeparate(path.elements, infomeve, map, entry)
-                WalkInfo(infoas.path, infoas.acc)
+                WalkInfo(infolb.up, infoas.acc)
             } else {
                 //last one
-                WalkInfo(infomeve.path, infomeve.acc)
+                WalkInfo(infolb.up, infomeve.acc)
             }
             acc = infomes.acc
             path.pop()
         }
-        val infole = WalkInfo(infolb.path, acc)
+        val infole = WalkInfo(infolb.up, acc)
         return this.mapEnd(path.elements, infole, map)
     }
 
