@@ -58,17 +58,55 @@ interface Datatype : TypeDeclaration {
 
     val property: Map<String, DatatypeProperty>
 
+    /**
+     * properties that are marked as 'identity'
+     */
     val identityProperties: List<DatatypeProperty>
 
-    val nonIdentityProperties: Set<DatatypeProperty>
+    /**
+     * properties that are not marked as 'identity', but are defined explicitly
+     */
+    val explicitNonIdentityProperties: Set<DatatypeProperty>
 
+    /**
+     * properties that are marked as 'composite' (composite has to be explicitly defined)
+     */
     val compositeProperties: Set<DatatypeProperty>
 
-    val referenceProperties: Set<DatatypeProperty>
+    /**
+     * properties that are explicitly marked as 'reference'
+     */
+    val explicitReferenceProperties: Set<DatatypeProperty>
 
-    val allProperty: Map<String, DatatypeProperty>
+    /**
+     * all properties (from this and its supertypes) that are explicitly defined
+     */
+    val allExplicitProperty: Map<String, DatatypeProperty>
+
+    /**
+     * properties that are explicitly marked as 'ignore'
+     */
+    val ignoredProperties: Set<DatatypeProperty>
 
     fun qualifiedName(separator: String): String
+
+    /**
+     * all properties found on the object minus (excluding) those marked as identity or ignore
+     * <p> (required because Kotlin-Javascript reflection not yet supported)
+     */
+    fun objectNonIdentityProperties(obj:Any): Set<DatatypeProperty>
+
+    /**
+     * all mutable properties found on the object minus (excluding) those marked as identity or ignore
+     * <p> (required because Kotlin-Javascript reflection not yet supported)
+     */
+    fun objectNonIdentityMutableProperties(obj:Any): Set<DatatypeProperty>
+
+    /**
+     * all properties found on the object minus (excluding) those marked as composite or ignore
+     * <p> (required because Kotlin-Javascript reflection not yet supported)
+     */
+    fun objectReferenceProperties(obj:Any): Set<DatatypeProperty>
 }
 
 interface DatatypeProperty {
@@ -78,5 +116,6 @@ interface DatatypeProperty {
     val identityIndex: Int
     val isComposite: Boolean
     val isReference: Boolean
+    val isMutable: Boolean
     val ignore: Boolean
 }

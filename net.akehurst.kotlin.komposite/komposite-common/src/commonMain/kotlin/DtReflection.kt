@@ -43,6 +43,6 @@ fun DatatypeProperty.set(obj: Any, value: Any?) {
         val reflect = cls.reflect()
         reflect.setProperty(this.name, obj, value)
     } catch (t: Throwable) {
-        throw KompositeException("Unable to set property ${this.name} to ${value} due to ${t.message ?: "Unknown"}")
+        throw KompositeException("Unable to set property ${this.name}.${this.name} to ${value} due to ${t.message ?: "Unknown"}")
     }
 }

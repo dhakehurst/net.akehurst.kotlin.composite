@@ -71,10 +71,10 @@ data class CollectionTypeSimple(
         val MAP_TYPE = CollectionTypeSimple(NamespaceSimple(listOf("kotlin", "collections")), "Map")
     }
 
-    override val isArray = this== ARRAY_TYPE
-    override val isList = this== LIST_TYPE
-    override val isSet = this== SET_TYPE
-    override val isMap = this== MAP_TYPE
+    override val isArray = this == ARRAY_TYPE
+    override val isList = this == LIST_TYPE
+    override val isSet = this == SET_TYPE
+    override val isMap = this == MAP_TYPE
 
     override fun qualifiedName(separator: String): String {
         return this.namespace.qualifiedName(separator) + separator + this.name
@@ -100,7 +100,7 @@ data class DatatypeSimple(
         get() {
             return property.values.filter { it.isIdentity }.sortedBy { it.identityIndex }
         }
-    override val nonIdentityProperties: Set<DatatypeProperty>
+    override val explicitNonIdentityProperties: Set<DatatypeProperty>
         get() {
             return property.values.filter { it.isIdentity.not() }.toSet()
         }
@@ -109,15 +109,19 @@ data class DatatypeSimple(
             return property.values.filter { it.isComposite }.toSet()
         }
 
-    override val referenceProperties: Set<DatatypeProperty>
+    override val explicitReferenceProperties: Set<DatatypeProperty>
         get() {
             return property.values.filter { it.isReference }.toSet()
         }
 
-
-    override val allProperty: Map<String, DatatypeProperty>
+    override val allExplicitProperty: Map<String, DatatypeProperty>
         get() {
-            return superTypes.flatMap { it.allProperty.values }.associate { Pair(it.name, it) } + this.property
+            return superTypes.flatMap { it.allExplicitProperty.values }.associate { Pair(it.name, it) } + this.property
+        }
+
+    override val ignoredProperties: Set<DatatypeProperty>
+        get() {
+            return property.values.filter { it.ignore }.toSet()
         }
 
     fun addSuperType(value: Datatype) {
@@ -130,6 +134,33 @@ data class DatatypeSimple(
 
     override fun qualifiedName(separator: String): String {
         return this.namespace.qualifiedName(separator) + separator + this.name
+    }
+
+    override fun objectNonIdentityProperties(obj: Any): Set<DatatypeProperty> {
+        val objProperties: Set<DatatypeProperty> = obj::class.reflect().allPropertyNames(obj).map {
+            if (this.property.containsKey(it)) {
+                this.property[it]!!
+            } else {
+                DatatypePropertySimple(this, it)
+            }
+        }.toSet()
+        return (property.values.toSet() + objProperties) - this.identityProperties - this.ignoredProperties
+    }
+
+    override fun objectNonIdentityMutableProperties(obj: Any): Set<DatatypeProperty> {
+        val objProperties: Set<DatatypeProperty> = objectNonIdentityProperties(obj).filter { it.isMutable }.toSet()
+        return (property.values.toSet() + objProperties) - this.identityProperties - this.ignoredProperties
+    }
+
+    override fun objectReferenceProperties(obj: Any): Set<DatatypeProperty> {
+        val objProperties: Set<DatatypeProperty> = obj::class.reflect().allPropertyNames(obj).map {
+            if (this.property.containsKey(it)) {
+                this.property[it]!!
+            } else {
+                DatatypePropertySimple(this, it)
+            }
+        }.toSet()
+        return (property.values.toSet() + objProperties) - this.compositeProperties - this.ignoredProperties
     }
 }
 
@@ -147,7 +178,6 @@ data class DatatypePropertySimple(
         get() = _isComposite
         set(value) {
             this._isComposite = value
-
         }
     override var isReference: Boolean
         get() = this.isComposite.not()
@@ -155,13 +185,16 @@ data class DatatypePropertySimple(
             this._isComposite = value.not()
         }
 
+    override val isMutable: Boolean get() = this.datatype.clazz.reflect().isPropertyMutable(this.name)
+
     override var ignore: Boolean = false
 
     fun setIdentityIndex(value: Int) {
         this._identityIndex = value
     }
 
-    val type: TypeDeclaration get() {
-        TODO("needs kotlin JS reflection")
-    }
+    val type: TypeDeclaration
+        get() {
+            TODO("needs kotlin JS reflection")
+        }
 }
