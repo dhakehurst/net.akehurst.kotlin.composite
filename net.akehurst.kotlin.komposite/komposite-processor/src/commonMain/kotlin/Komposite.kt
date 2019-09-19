@@ -54,12 +54,18 @@ object Komposite {
                 primitive = 'primitive' NAME ;
                 collection = 'collection' NAME ;
                 datatype = 'datatype' NAME '{' property* '}' ;
-                property = NAME '{' characteristic+ '}' ;
-                characteristic =  characteristicValue | identity ;
-                characteristicValue = 'composite' | 'reference' | 'ignore' ;
-                identity = 'identity' '(' POSITIVE_INTEGER ')' ;
+                property = characteristic NAME ':' typeDeclaration ;
+                typeDeclaration = path typeArgumentList? ;
+                typeArgumentList = '<' [ path / ',']+ '>' ;
+                characteristic
+                   = 'val'    // reference, constructor argument
+                   | 'var'    // reference mutable property
+                   | 'cal'    // composite, constructor argument
+                   | 'car'    // composite mutable property
+                   | 'dis'    // disregard / ignore
+                   ;
             
-                NAME = "[a-zA-Z_-][a-zA-Z0-9_-]*" ;
+                NAME = "[a-zA-Z_][a-zA-Z0-9_]*" ;
                 POSITIVE_INTEGER = "[0-9]+" ;
             
             }
@@ -68,7 +74,6 @@ object Komposite {
 
 
     }
-
 
     @JsName("process")
     fun process(datatypeModel:String) : DatatypeModel {

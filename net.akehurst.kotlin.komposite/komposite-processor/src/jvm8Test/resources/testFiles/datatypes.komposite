@@ -1,14 +1,11 @@
 namespace net.akehurst.kotlin.composite.api {
 
   datatype TestDatatype {
-
-        prop1 { composite }
-        prop2 { reference }
-        // prop3 { reference } reference is the default
-        prop4 { ignore }
-        prop4 { identity(1) }
+        val id : String
+        car prop1 : String
+        var prop2 : Int
+        dis prop4 : String
+        cal id2 : Int
   }
-
-
 
 }

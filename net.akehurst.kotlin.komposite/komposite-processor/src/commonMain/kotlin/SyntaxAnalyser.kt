@@ -38,9 +38,9 @@ class SyntaxAnalyser : SyntaxAnalyserAbstract() {
         this.register("collection", this::collection as BranchHandler<Datatype>)
         this.register("datatype", this::datatype as BranchHandler<Datatype>)
         this.register("property", this::property as BranchHandler<DatatypeProperty>)
+        this.register("typeDeclaration", this::characteristicValue as BranchHandler<Datatype>)
+        this.register("typeArgumentList", this::characteristicValue as BranchHandler<Datatype>)
         this.register("characteristic", this::characteristic as BranchHandler<Datatype>)
-        this.register("characteristicValue", this::characteristicValue as BranchHandler<Datatype>)
-        this.register("identity", this::identity as BranchHandler<Datatype>)
     }
 
     override fun clear() {
@@ -113,32 +113,30 @@ class SyntaxAnalyser : SyntaxAnalyserAbstract() {
     }
 
 
-    // property = NAME '{' characteristic+ '}' ;
+    // property = characteristic NAME : typeDeclaration ;
     fun property(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): DatatypeProperty {
         val datatype = arg as Datatype
-        val name = children[0].nonSkipMatchedText
+        val name = children[1].nonSkipMatchedText
         val result = DatatypePropertySimple(datatype, name)
 
-        val charList = children[1].branchNonSkipChildren.map {
-            super.transform<Any>(it, arg)
-        }
+        val char = children[0].nonSkipMatchedText
 
-        charList.forEach {
-            when (it) {
-                "composite" -> result.isComposite = true
-                "reference" -> result.isReference = true
-                "ignore" -> result.ignore = true
-                else -> {
-                    if (it is Int) {
-                        result.setIdentityIndex(it)
-                    } else {
-                        throw SyntaxAnalyserException("unknown characteristic")
-                    }
-                }
+        when (char) {
+            "val" -> {
+                result.isReference = true
+                result.setIdentityIndex(datatype.identityProperties.size)
             }
-
-
+            "var" -> result.isReference = true
+            "cal" -> {
+                result.isComposite = true
+                result.setIdentityIndex(datatype.identityProperties.size)
+            }
+            "car" -> result.isComposite = true
+            "dis" -> result.ignore = true
+            else ->throw SyntaxAnalyserException("unknown characteristic")
         }
+
+        // TODO: typeDeclaration
 
         return result
     }
