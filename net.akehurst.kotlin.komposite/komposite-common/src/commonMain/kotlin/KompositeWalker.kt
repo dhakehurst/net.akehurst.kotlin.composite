@@ -20,6 +20,7 @@ import net.akehurst.kotlin.komposite.api.CollectionType
 import net.akehurst.kotlin.komposite.api.Datatype
 import net.akehurst.kotlin.komposite.api.DatatypeProperty
 import net.akehurst.kotlin.komposite.api.KompositeException
+import net.akehurst.kotlin.komposite.processor.DatatypeModelSimple
 import net.akehurst.kotlin.komposite.processor.DatatypePropertySimple
 import net.akehurst.kotlinx.collections.Stack
 import net.akehurst.kotlinx.reflect.reflect
@@ -207,7 +208,7 @@ class KompositeWalker<P : Any?, A : Any?>(
             var acc = infoob.acc
 
             cls.reflect().allPropertyNames(obj).forEach { propName ->
-                val prop = dt.allExplicitProperty[propName] ?: DatatypePropertySimple(dt, propName) //default is a reference property
+                val prop = dt.allExplicitProperty[propName] ?: DatatypePropertySimple(dt, propName, DatatypeModelSimple.ANY_TYPE_REF{ tref->dt.namespace.model.resolve(tref)}) //default is a reference property
                 if (prop.ignore) {
                     //TODO: log!
                 } else {
@@ -271,12 +272,14 @@ class KompositeWalker<P : Any?, A : Any?>(
         map.entries.forEachIndexed { index, entry ->
             val infobEl = WalkInfo(infolb.up, acc)
             val ppath = path + index.toString()
-            val infomekb = this.mapEntryKeyBegin(ppath, infobEl, entry)
-            val infomekv = this.walkMapEntryKey(owningProperty, ppath, infomekb, entry.key)
-            val infomeke = this.mapEntryKeyEnd(ppath, infomekv, entry)
-            val infomevb = this.mapEntryValueBegin(ppath, infobEl, entry)
-            val infomev = this.walkMapEntryValue(owningProperty, ppath, infomevb, entry.value)
-            val infomeve = this.mapEntryValueEnd(ppath, infomev, entry)
+            val ppathKey = ppath + "key"
+            val ppathValue = ppath + "value"
+            val infomekb = this.mapEntryKeyBegin(ppathKey, infobEl, entry)
+            val infomekv = this.walkMapEntryKey(owningProperty, ppathKey, infomekb, entry.key)
+            val infomeke = this.mapEntryKeyEnd(ppathKey, infomekv, entry)
+            val infomevb = this.mapEntryValueBegin(ppathValue, infobEl, entry)
+            val infomev = this.walkMapEntryValue(owningProperty, ppathValue, infomevb, entry.value)
+            val infomeve = this.mapEntryValueEnd(ppathValue, infomev, entry)
             val infomes = if (index < map.size - 1) {
                 val infoas = this.mapSeparate(ppath, infomeve, map, entry)
                 WalkInfo(infolb.up, infoas.acc)

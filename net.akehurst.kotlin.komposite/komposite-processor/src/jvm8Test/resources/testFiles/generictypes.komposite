@@ -1,0 +1,9 @@
+namespace net.akehurst.kotlin.composite.api {
+
+  datatype TestDatatype {
+        val id : List<String>
+        car prop1 : Set<String>
+        var prop2 : Map<Int,String>
+  }
+
+}

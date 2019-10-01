@@ -22,6 +22,17 @@ import net.akehurst.kotlinx.reflect.reflect
 import kotlin.reflect.KClass
 
 class DatatypeModelSimple : DatatypeModel {
+
+    companion object {
+        //TODO: 'close' this set of instances
+        fun ANY_TYPE_REF(resolver: (TypeReference)->TypeDeclaration) = TypeReferenceSimple(resolver, listOf("kotlin", "Any"), emptyList())
+
+        fun ARRAY_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "Array", listOf("T"))
+        fun LIST_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "List", listOf("T"))
+        fun SET_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "Set", listOf("T"))
+        fun MAP_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "Map", listOf("K", "V"))
+    }
+
     private val _namespaces = mutableListOf<Namespace>()
 
     override val namespaces: List<Namespace> = _namespaces
@@ -30,9 +41,26 @@ class DatatypeModelSimple : DatatypeModel {
         this._namespaces += value
     }
 
+    fun findFirstByName(typeName: String): TypeDeclaration {
+        return this.namespaces.mapNotNull {
+            it.declaration[typeName]
+        }.firstOrNull() ?: throw KompositeException("TypeDeclaration $typeName not found in any namespace")
+    }
+
+    override fun resolve(typeReference: TypeReference): TypeDeclaration {
+        val nsPath = typeReference.typePath.dropLast(1)
+        val typeName = typeReference.typePath.last()
+        return if (nsPath.isEmpty()) {
+            this.findFirstByName(typeName)
+        } else {
+            val ns = this.namespaces.firstOrNull { it.path == nsPath } ?: throw KompositeException("Namespace $nsPath not found")
+            ns.declaration[typeName] ?: throw KompositeException("TypeDeclaration $typeName not found in namespace $nsPath")
+        }
+    }
 }
 
-data class NamespaceSimple(
+class NamespaceSimple(
+        override var model: DatatypeModel,
         override val path: List<String>
 ) : Namespace {
 
@@ -47,12 +75,29 @@ data class NamespaceSimple(
     override fun qualifiedName(separator: String): String {
         return this.path.joinToString(separator)
     }
+
+    override fun hashCode(): Int {
+        return this.path.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return when(other) {
+            is Namespace -> this.path == other.path
+            else -> false
+        }
+    }
+
+    override fun toString(): String {
+        return "Namespace{$path}"
+    }
 }
 
 data class PrimitiveTypeSimple(
         override val namespace: Namespace,
         override val name: String
 ) : PrimitiveType {
+    override val isPrimitive: Boolean = true
+    override val isCollection: Boolean = false
     override fun qualifiedName(separator: String): String {
         return this.namespace.qualifiedName(separator) + separator + this.name
     }
@@ -60,21 +105,16 @@ data class PrimitiveTypeSimple(
 
 data class CollectionTypeSimple(
         override val namespace: Namespace,
-        override val name: String
+        override val name: String,
+        override val parameters: List<String>
 ) : CollectionType {
 
-    companion object {
-        //TODO: 'close' this set of instances
-        val ARRAY_TYPE = CollectionTypeSimple(NamespaceSimple(listOf("kotlin", "collections")), "Array")
-        val LIST_TYPE = CollectionTypeSimple(NamespaceSimple(listOf("kotlin", "collections")), "List")
-        val SET_TYPE = CollectionTypeSimple(NamespaceSimple(listOf("kotlin", "collections")), "Set")
-        val MAP_TYPE = CollectionTypeSimple(NamespaceSimple(listOf("kotlin", "collections")), "Map")
-    }
-
-    override val isArray = this == ARRAY_TYPE
-    override val isList = this == LIST_TYPE
-    override val isSet = this == SET_TYPE
-    override val isMap = this == MAP_TYPE
+    override val isPrimitive: Boolean = false
+    override val isCollection: Boolean = true
+    override val isArray get() = this == DatatypeModelSimple.ARRAY_TYPE(this.namespace.model)
+    override val isList get() = this == DatatypeModelSimple.LIST_TYPE(this.namespace.model)
+    override val isSet get() = this == DatatypeModelSimple.SET_TYPE(this.namespace.model)
+    override val isMap get() = this == DatatypeModelSimple.MAP_TYPE(this.namespace.model)
 
     override fun qualifiedName(separator: String): String {
         return this.namespace.qualifiedName(separator) + separator + this.name
@@ -88,6 +128,9 @@ data class DatatypeSimple(
 
     private val _superTypes = mutableListOf<Datatype>()
     private val _property = mutableMapOf<String, DatatypeProperty>()
+
+    override val isPrimitive: Boolean = false
+    override val isCollection: Boolean = false
 
     override val clazz: KClass<*>
         get() = ModuleRegistry.classForName(this.qualifiedName("."))
@@ -141,7 +184,7 @@ data class DatatypeSimple(
             if (this.property.containsKey(it)) {
                 this.property[it]!!
             } else {
-                DatatypePropertySimple(this, it)
+                DatatypePropertySimple(this, it, DatatypeModelSimple.ANY_TYPE_REF { tref->this.namespace.model.resolve(tref)})
             }
         }.toSet()
         return (property.values.toSet() + objProperties) - this.identityProperties - this.ignoredProperties
@@ -157,7 +200,7 @@ data class DatatypeSimple(
             if (this.property.containsKey(it)) {
                 this.property[it]!!
             } else {
-                DatatypePropertySimple(this, it)
+                DatatypePropertySimple(this, it, DatatypeModelSimple.ANY_TYPE_REF { tref->this.namespace.model.resolve(tref)})
             }
         }.toSet()
         return (property.values.toSet() + objProperties) - this.compositeProperties - this.ignoredProperties
@@ -166,11 +209,16 @@ data class DatatypeSimple(
 
 data class DatatypePropertySimple(
         override val datatype: Datatype,
-        override val name: String
+        override val name: String,
+        override val typeReference: TypeReference
 ) : DatatypeProperty {
     private var _isComposite = false
     private var _identityIndex = -1
 
+    override val propertyType: TypeInstance
+        get() {
+            return typeReference.type
+        }
     override val isIdentity: Boolean get() = -1 != _identityIndex
     override val identityIndex: Int get() = _identityIndex
 
@@ -193,8 +241,30 @@ data class DatatypePropertySimple(
         this._identityIndex = value
     }
 
-    val type: TypeDeclaration
-        get() {
-            TODO("needs kotlin JS reflection")
+
+}
+
+data class TypeReferenceSimple(
+        val resolver: (TypeReference)->TypeDeclaration,
+        override val typePath: List<String>,
+        override val typeArguments: List<TypeReference>
+) : TypeReference {
+
+    private fun resolve(ref:TypeReference) : TypeInstance {
+        val decl = this.resolver(ref)
+        val args = typeArguments.map {
+            resolve(it)
         }
+        return TypeInstanceSimple(decl, args)
+    }
+
+    override val type: TypeInstance
+        get() = resolve(this)
+
+}
+
+data class TypeInstanceSimple(
+        override val declaration: TypeDeclaration,
+        override val arguments: List<TypeInstance>
+) : TypeInstance {
 }

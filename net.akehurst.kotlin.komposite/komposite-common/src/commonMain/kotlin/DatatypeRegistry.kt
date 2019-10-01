@@ -20,7 +20,7 @@ import net.akehurst.kotlin.komposite.api.*
 import kotlin.reflect.KClass
 import net.akehurst.kotlin.komposite.processor.Komposite
 
-class DatatypeRegistry {
+class DatatypeRegistry : DatatypeModel {
 
 	companion object {
 		val KOTLIN_STD = """
@@ -35,11 +35,11 @@ class DatatypeRegistry {
                 primitive String
             }
             namespace kotlin.collections {
-                collection Array
-                collection Collection
-                collection List
-                collection Set
-                collection Map
+                collection Array<T>
+                collection Collection<T>
+                collection List<T>
+                collection Set<T>
+                collection Map<K,V>
             }
         """.trimIndent()
 
@@ -54,29 +54,36 @@ class DatatypeRegistry {
             }
     
             namespace java.util {
-                collection Array
-				collection Collection
-				collection List
-                collection Set
-                collection Map
+                collection Array<T>
+				collection Collection<T>
+				collection List<T>
+                collection Set<T>
+                collection Map<K,V>
             }
         """.trimIndent()
 	}
 
-    private val _datatypes = mutableMapOf<String, Datatype>()
+	private val _namespaces = mutableListOf<Namespace>()
+	private val _datatypes = mutableMapOf<String, Datatype>()
 	private val _collection = mutableMapOf<String,CollectionType>()
 	private val _primitive = mutableMapOf<String,PrimitiveType>()
+
+	override val namespaces: List<Namespace>
+		get() {
+			return this._namespaces
+		}
 
 	fun registerFromConfigString(datatypeModel:String) {
 		try {
 			//TODO: use qualified names when kotlin JS reflection supports qualifiedName
 			val dtm:DatatypeModel = Komposite.process(datatypeModel)
 			dtm.namespaces.forEach { ns->
+				ns.model = this
+				this._namespaces.add(ns)
 				_primitive += ns.declaration.values.filterIsInstance<PrimitiveType>().associate { Pair(it.name, it) }
 				_collection += ns.declaration.values.filterIsInstance<CollectionType>().associate { Pair(it.name, it) }
 				_datatypes += ns.declaration.values.filterIsInstance<Datatype>().associate { Pair(it.name, it) }
 			}
-
 		} catch (e:Exception) {
 			throw  KompositeException("Error trying to register datatypes from config string", e);
 		}
@@ -127,5 +134,22 @@ class DatatypeRegistry {
 	fun findPrimitiveByClass(cls:KClass<*>) : PrimitiveType? {
 		//TODO: use qualified name where possible
 		return this._primitive[cls.simpleName]
+	}
+
+	fun findFirstByName(typeName: String): TypeDeclaration {
+		return this.namespaces.mapNotNull {
+			it.declaration[typeName]
+		}.firstOrNull() ?: throw KompositeException("TypeDeclaration $typeName not found in any namespace")
+	}
+
+	override fun resolve(typeReference: TypeReference): TypeDeclaration {
+		val nsPath = typeReference.typePath.dropLast(1)
+		val typeName = typeReference.typePath.last()
+		return if (nsPath.isEmpty()) {
+			this.findFirstByName(typeName)
+		} else {
+			val ns = this.namespaces.firstOrNull { it.path == nsPath } ?: throw KompositeException("Namespace $nsPath not found")
+			ns.declaration[typeName] ?: throw KompositeException("TypeDeclaration $typeName not found in namespace $nsPath")
+		}
 	}
 }

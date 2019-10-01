@@ -25,9 +25,11 @@ class KompositeException : RuntimeException {
 
 interface DatatypeModel {
     val namespaces: List<Namespace>
+    fun resolve(typeReference: TypeReference) : TypeDeclaration
 }
 
 interface Namespace {
+    var model: DatatypeModel
     val path: List<String>
     val declaration: Map<String, TypeDeclaration>
     fun qualifiedName(separator: String): String
@@ -36,10 +38,13 @@ interface Namespace {
 interface TypeDeclaration {
     val namespace: Namespace
     val name: String
+    val isPrimitive : Boolean
+    val isCollection : Boolean
+
+    fun qualifiedName(separator: String): String
 }
 
 interface PrimitiveType : TypeDeclaration {
-    fun qualifiedName(separator: String): String
 }
 
 interface CollectionType : TypeDeclaration {
@@ -47,7 +52,8 @@ interface CollectionType : TypeDeclaration {
     val isList: Boolean
     val isSet: Boolean
     val isMap: Boolean
-    fun qualifiedName(separator: String): String
+
+    val parameters : List<String>
 }
 
 interface Datatype : TypeDeclaration {
@@ -88,8 +94,6 @@ interface Datatype : TypeDeclaration {
      */
     val ignoredProperties: Set<DatatypeProperty>
 
-    fun qualifiedName(separator: String): String
-
     /**
      * all properties found on the object minus (excluding) those marked as identity or ignore
      * <p> (required because Kotlin-Javascript reflection not yet supported)
@@ -112,10 +116,31 @@ interface Datatype : TypeDeclaration {
 interface DatatypeProperty {
     val datatype: Datatype
     val name: String
+    val typeReference: TypeReference
+    val propertyType: TypeInstance
     val isIdentity: Boolean
     val identityIndex: Int
     val isComposite: Boolean
     val isReference: Boolean
     val isMutable: Boolean
     val ignore: Boolean
+}
+
+enum class DatatypePropertyCharacteristic {
+    `val`, // reference, constructor argument
+    `var`, // reference mutable property
+    cal,   // composite, constructor argument
+    car,   // composite mutable property
+    dis    // disregard / ignore
+}
+
+interface TypeReference {
+    val typePath:List<String>
+    val typeArguments: List<TypeReference>
+    val type : TypeInstance
+}
+
+interface TypeInstance {
+    val declaration: TypeDeclaration
+    val arguments: List<TypeInstance>
 }

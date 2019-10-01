@@ -59,7 +59,7 @@ class test_KompositeWalker {
                 primitive String
             }
             namespace kotlin.collections {
-               collection Map
+               collection Map<K,V>
             }
         """)
         val sut = kompositeWalker<String, String>(reg) {

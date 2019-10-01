@@ -42,7 +42,8 @@ class test_Parser(val data:Data) {
                 "testFiles/empty.komposite",
                 "testFiles/emptyNamespace.komposite",
                 "testFiles/emptyDatatype.komposite",
-                "testFiles/datatypes.komposite"
+                "testFiles/datatypes.komposite",
+                "testFiles/generictypes.komposite"
         )
 
 

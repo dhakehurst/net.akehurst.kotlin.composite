@@ -52,11 +52,12 @@ object Komposite {
                 path = [ NAME / '.']+ ;
                 declaration = primitive | collection | datatype ;
                 primitive = 'primitive' NAME ;
-                collection = 'collection' NAME ;
+                collection = 'collection' NAME '<' typeParameterList '>' ;
+                typeParameterList = [ NAME / ',']+ ;
                 datatype = 'datatype' NAME '{' property* '}' ;
-                property = characteristic NAME ':' typeDeclaration ;
-                typeDeclaration = path typeArgumentList? ;
-                typeArgumentList = '<' [ path / ',']+ '>' ;
+                property = characteristic NAME ':' typeReference ;
+                typeReference = path typeArgumentList? ;
+                typeArgumentList = '<' [ typeReference / ',']+ '>' ;
                 characteristic
                    = 'val'    // reference, constructor argument
                    | 'var'    // reference mutable property
