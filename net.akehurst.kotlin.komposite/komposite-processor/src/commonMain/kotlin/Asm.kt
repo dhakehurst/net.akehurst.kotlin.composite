@@ -252,7 +252,7 @@ data class TypeReferenceSimple(
 
     private fun resolve(ref:TypeReference) : TypeInstance {
         val decl = this.resolver(ref)
-        val args = typeArguments.map {
+        val args = ref.typeArguments.map {
             resolve(it)
         }
         return TypeInstanceSimple(decl, args)

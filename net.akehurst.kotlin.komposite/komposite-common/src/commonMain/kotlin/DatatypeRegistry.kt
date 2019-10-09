@@ -67,14 +67,16 @@ class DatatypeRegistry : DatatypeModel {
 	private val _datatypes = mutableMapOf<String, Datatype>()
 	private val _collection = mutableMapOf<String,CollectionType>()
 	private val _primitive = mutableMapOf<String,PrimitiveType>()
+	private val _primitiveMappers = mutableMapOf<KClass<*>,PrimitiveMapper>()
 
 	override val namespaces: List<Namespace>
 		get() {
 			return this._namespaces
 		}
 
-	fun registerFromConfigString(datatypeModel:String) {
+	fun registerFromConfigString(datatypeModel:String, primitiveMappers:Map<KClass<*>,PrimitiveMapper>) {
 		try {
+			this._primitiveMappers.putAll(primitiveMappers)
 			//TODO: use qualified names when kotlin JS reflection supports qualifiedName
 			val dtm:DatatypeModel = Komposite.process(datatypeModel)
 			dtm.namespaces.forEach { ns->
@@ -134,6 +136,10 @@ class DatatypeRegistry : DatatypeModel {
 	fun findPrimitiveByClass(cls:KClass<*>) : PrimitiveType? {
 		//TODO: use qualified name where possible
 		return this._primitive[cls.simpleName]
+	}
+
+	fun findPrimitiveMapperFor(cls:KClass<*>) : PrimitiveMapper? {
+		return this._primitiveMappers[cls]
 	}
 
 	fun findFirstByName(typeName: String): TypeDeclaration {

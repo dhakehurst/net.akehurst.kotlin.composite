@@ -144,3 +144,21 @@ interface TypeInstance {
     val declaration: TypeDeclaration
     val arguments: List<TypeInstance>
 }
+
+class PrimitiveMapper(
+        val primitiveKlass: KClass<*>,
+        val rawKlass: KClass<*>,
+        val toRaw: (Any) -> Any,
+        val fromRaw: (Any) -> Any
+) {
+    companion object {
+        fun <P : Any, R : Any> create(
+                primitiveKlass: KClass<P>,
+                rawKlass: KClass<R>,
+                toRaw: (P) -> R,
+                fromRaw: (R) -> P): PrimitiveMapper {
+            return PrimitiveMapper(primitiveKlass, rawKlass, toRaw as (Any) -> Any, fromRaw as (Any) -> Any)
+
+        }
+    }
+}

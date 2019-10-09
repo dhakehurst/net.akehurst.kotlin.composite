@@ -61,7 +61,7 @@ class test_KompositeWalker {
             namespace kotlin.collections {
                collection Map<K,V>
             }
-        """)
+        """, emptyMap())
         val sut = kompositeWalker<String, String>(reg) {
             primitive { path,info, value ->
                 when(value) {
@@ -116,7 +116,7 @@ class test_KompositeWalker {
                  
                }
             }
-        """)
+        """, emptyMap())
 
         var result = ""
         val sut = kompositeWalker<String, String>(reg) {

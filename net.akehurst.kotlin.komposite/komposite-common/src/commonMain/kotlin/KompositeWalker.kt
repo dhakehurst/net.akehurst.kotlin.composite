@@ -16,10 +16,7 @@
 
 package net.akehurst.kotlin.komposite.common
 
-import net.akehurst.kotlin.komposite.api.CollectionType
-import net.akehurst.kotlin.komposite.api.Datatype
-import net.akehurst.kotlin.komposite.api.DatatypeProperty
-import net.akehurst.kotlin.komposite.api.KompositeException
+import net.akehurst.kotlin.komposite.api.*
 import net.akehurst.kotlin.komposite.processor.DatatypeModelSimple
 import net.akehurst.kotlin.komposite.processor.DatatypePropertySimple
 import net.akehurst.kotlinx.collections.Stack
@@ -54,9 +51,9 @@ class KompositeWalker<P : Any?, A : Any?>(
         val collElementBegin: (path: List<String>, info: WalkInfo<P, A>, element: Any?) -> WalkInfo<P, A>,
         val collElementEnd: (path: List<String>, info: WalkInfo<P, A>, element: Any?) -> WalkInfo<P, A>,
         val collSeparate: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A>,
-        val collEnd: (path: List<String>, info: WalkInfo<P, A>, type:CollectionType, coll: Collection<*>) -> WalkInfo<P, A>,
+        val collEnd: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A>,
         val reference: (path: List<String>, info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A>,
-        val primitive: (path: List<String>, info: WalkInfo<P, A>, value: Any) -> WalkInfo<P, A>,
+        val primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper?) -> WalkInfo<P, A>,
         val nullValue: (path: List<String>, info: WalkInfo<P, A>) -> WalkInfo<P, A>
 ) {
 
@@ -78,7 +75,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         private var _collSeparate: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A> = { _, info, _, _, _ -> info }
         private var _collEnd: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _reference: (path: List<String>, info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A> = { _, info, _, _ -> info }
-        private var _primitive: (path: List<String>, info: WalkInfo<P, A>, value: Any) -> WalkInfo<P, A> = { _, info, _ -> info }
+        private var _primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper?) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _nullValue: (path: List<String>, info: WalkInfo<P, A>) -> WalkInfo<P, A> = { _, info -> info }
 
         fun objectBegin(func: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: Datatype) -> WalkInfo<P, A>) {
@@ -125,7 +122,7 @@ class KompositeWalker<P : Any?, A : Any?>(
             this._mapEnd = func
         }
 
-        fun collBegin(func: (path: List<String>, info: WalkInfo<P, A>, type:CollectionType, coll: Collection<*>) -> WalkInfo<P, A>) {
+        fun collBegin(func: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A>) {
             this._collBegin = func
         }
 
@@ -137,11 +134,11 @@ class KompositeWalker<P : Any?, A : Any?>(
             this._collElementEnd = func
         }
 
-        fun collSeparate(func: (path: List<String>, info: WalkInfo<P, A>, type:CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A>) {
+        fun collSeparate(func: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A>) {
             this._collSeparate = func
         }
 
-        fun collEnd(func: (path: List<String>, info: WalkInfo<P, A>, type:CollectionType, coll: Collection<*>) -> WalkInfo<P, A>) {
+        fun collEnd(func: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A>) {
             this._collEnd = func
         }
 
@@ -149,7 +146,7 @@ class KompositeWalker<P : Any?, A : Any?>(
             this._reference = func
         }
 
-        fun primitive(func: (path: List<String>, info: WalkInfo<P, A>, value: Any) -> WalkInfo<P, A>) {
+        fun primitive(func: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper?) -> WalkInfo<P, A>) {
             this._primitive = func
         }
 
@@ -208,7 +205,8 @@ class KompositeWalker<P : Any?, A : Any?>(
             var acc = infoob.acc
 
             cls.reflect().allPropertyNames(obj).forEach { propName ->
-                val prop = dt.allExplicitProperty[propName] ?: DatatypePropertySimple(dt, propName, DatatypeModelSimple.ANY_TYPE_REF{ tref->dt.namespace.model.resolve(tref)}) //default is a reference property
+                val prop = dt.allExplicitProperty[propName]
+                        ?: DatatypePropertySimple(dt, propName, DatatypeModelSimple.ANY_TYPE_REF { tref -> dt.namespace.model.resolve(tref) }) //default is a reference property
                 if (prop.ignore) {
                     //TODO: log!
                 } else {
@@ -323,7 +321,8 @@ class KompositeWalker<P : Any?, A : Any?>(
 
 
     protected fun walkPrimitive(path: List<String>, info: WalkInfo<P, A>, primitive: Any): WalkInfo<P, A> {
-        return this.primitive(path, info, primitive)
+        val mapper = this.registry.findPrimitiveMapperFor(primitive::class)
+        return this.primitive(path, info, primitive, mapper)
     }
 
     protected fun walkNull(path: List<String>, info: WalkInfo<P, A>): WalkInfo<P, A> {
