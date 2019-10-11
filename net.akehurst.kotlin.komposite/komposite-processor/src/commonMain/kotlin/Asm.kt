@@ -180,7 +180,7 @@ data class DatatypeSimple(
     }
 
     override fun objectNonIdentityProperties(obj: Any): Set<DatatypeProperty> {
-        val objProperties: Set<DatatypeProperty> = obj::class.reflect().allPropertyNames(obj).map {
+        val objProperties: Set<DatatypeProperty> = obj.reflect().allPropertyNames.map {
             if (this.property.containsKey(it)) {
                 this.property[it]!!
             } else {
@@ -196,7 +196,7 @@ data class DatatypeSimple(
     }
 
     override fun objectReferenceProperties(obj: Any): Set<DatatypeProperty> {
-        val objProperties: Set<DatatypeProperty> = obj::class.reflect().allPropertyNames(obj).map {
+        val objProperties: Set<DatatypeProperty> = obj.reflect().allPropertyNames.map {
             if (this.property.containsKey(it)) {
                 this.property[it]!!
             } else {

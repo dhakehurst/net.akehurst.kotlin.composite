@@ -32,16 +32,14 @@ fun Datatype.construct(vararg constructorArgs: Any?): Any {
 }
 
 fun DatatypeProperty.get(obj: Any): Any? {
-    val cls = obj::class
-    val reflect = cls.reflect()
-    return reflect.getProperty(this.name, obj)
+    val reflect = obj.reflect()
+    return reflect.getProperty(this.name)
 }
 
 fun DatatypeProperty.set(obj: Any, value: Any?) {
     try {
-        val cls = obj::class
-        val reflect = cls.reflect()
-        reflect.setProperty(this.name, obj, value)
+        val reflect = obj.reflect()
+        reflect.setProperty(this.name, value)
     } catch (t: Throwable) {
         throw KompositeException("Unable to set property ${this.name}.${this.name} to ${value} due to ${t.message ?: "Unknown"}")
     }

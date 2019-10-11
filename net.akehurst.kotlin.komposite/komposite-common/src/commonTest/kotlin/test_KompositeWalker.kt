@@ -63,7 +63,7 @@ class test_KompositeWalker {
             }
         """, emptyMap())
         val sut = kompositeWalker<String, String>(reg) {
-            primitive { path,info, value ->
+            primitive { path,info, value, m ->
                 when(value) {
                     is Int -> result += "${value}"
                     is String -> result += "'${value}'"
@@ -132,7 +132,7 @@ class test_KompositeWalker {
                 result += "${property.name} = "
                 info
             }
-            primitive { path,info, value ->
+            primitive { path,info, value, m ->
                 when(value) {
                     is String -> result += "'${value}'"
                 }

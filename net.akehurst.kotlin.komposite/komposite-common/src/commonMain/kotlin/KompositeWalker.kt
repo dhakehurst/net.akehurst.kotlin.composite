@@ -204,7 +204,7 @@ class KompositeWalker<P : Any?, A : Any?>(
             val infoob = this.objectBegin(path, info, obj, dt)
             var acc = infoob.acc
 
-            cls.reflect().allPropertyNames(obj).forEach { propName ->
+            obj.reflect().allPropertyNames.forEach { propName ->
                 val prop = dt.allExplicitProperty[propName]
                         ?: DatatypePropertySimple(dt, propName, DatatypeModelSimple.ANY_TYPE_REF { tref -> dt.namespace.model.resolve(tref) }) //default is a reference property
                 if (prop.ignore) {
