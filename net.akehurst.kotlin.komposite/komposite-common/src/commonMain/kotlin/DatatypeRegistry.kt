@@ -116,11 +116,19 @@ class DatatypeRegistry : DatatypeModel {
 		return this._datatypes.containsKey(value::class.simpleName)
 	}
 
+	fun findTypeDeclarationByName(name:String) : TypeDeclaration? {
+		return this._datatypes[name] ?: this._primitive[name] ?: this._collection[name]
+	}
+	fun findTypeDeclarationByClass(cls:KClass<*>) : TypeDeclaration? {
+		//TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
+		return this._datatypes[cls.simpleName] ?: this._primitive[cls.simpleName] ?: this._collection[cls.simpleName]
+	}
+
 	fun findDatatypeByName(name:String) : Datatype? {
 		return this._datatypes[name]
 	}
 	fun findDatatypeByClass(cls:KClass<*>) : Datatype? {
-		//TODO: use qualified name where possible
+		//TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
 		return this._datatypes[cls.simpleName]
 	}
 	fun findCollectionTypeFor(value:Any) : CollectionType? {
@@ -138,7 +146,7 @@ class DatatypeRegistry : DatatypeModel {
 		return this._primitive[name]
 	}
 	fun findPrimitiveByClass(cls:KClass<*>) : PrimitiveType? {
-		//TODO: use qualified name where possible
+		//TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
 		return this._primitive[cls.simpleName]
 	}
 

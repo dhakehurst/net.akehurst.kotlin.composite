@@ -169,6 +169,18 @@ data class DatatypeSimple(
             }.associate { Pair(it.name, it) } + this.property
         }
 
+    override val allExplicitNonIdentityProperties: Set<DatatypeProperty>
+        get() {
+            return superTypes.flatMap {
+                val decl = it.type.declaration
+                if (decl is Datatype) {
+                    decl.allExplicitNonIdentityProperties
+                } else {
+                    emptySet()
+                }
+            }.toSet() + this.explicitNonIdentityProperties
+        }
+
     override val ignoredProperties: Set<DatatypeProperty>
         get() {
             return property.values.filter { it.ignore }.toSet()

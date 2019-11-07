@@ -90,6 +90,11 @@ interface Datatype : TypeDeclaration {
     val allExplicitProperty: Map<String, DatatypeProperty>
 
     /**
+     * all readonly (identity) properties (from this and its supertypes) that are explicitly defined
+     */
+    val allExplicitNonIdentityProperties: Set<DatatypeProperty>
+
+    /**
      * properties that are explicitly marked as 'ignore'
      */
     val ignoredProperties: Set<DatatypeProperty>
