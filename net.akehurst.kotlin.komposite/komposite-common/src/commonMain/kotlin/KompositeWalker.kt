@@ -53,7 +53,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         val collSeparate: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A>,
         val collEnd: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A>,
         val reference: (path: List<String>, info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A>,
-        val primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper?) -> WalkInfo<P, A>,
+        val primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*,*>?) -> WalkInfo<P, A>,
         val nullValue: (path: List<String>, info: WalkInfo<P, A>) -> WalkInfo<P, A>
 ) {
 
@@ -75,7 +75,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         private var _collSeparate: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A> = { _, info, _, _, _ -> info }
         private var _collEnd: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _reference: (path: List<String>, info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A> = { _, info, _, _ -> info }
-        private var _primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper?) -> WalkInfo<P, A> = { _, info, _, _ -> info }
+        private var _primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*,*>?) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _nullValue: (path: List<String>, info: WalkInfo<P, A>) -> WalkInfo<P, A> = { _, info -> info }
 
         fun objectBegin(func: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: Datatype) -> WalkInfo<P, A>) {
@@ -146,7 +146,7 @@ class KompositeWalker<P : Any?, A : Any?>(
             this._reference = func
         }
 
-        fun primitive(func: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper?) -> WalkInfo<P, A>) {
+        fun primitive(func: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*,*>?) -> WalkInfo<P, A>) {
             this._primitive = func
         }
 

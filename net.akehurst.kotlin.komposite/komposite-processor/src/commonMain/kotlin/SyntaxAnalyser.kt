@@ -102,18 +102,24 @@ class SyntaxAnalyser : SyntaxAnalyserAbstract() {
         return result
     }
 
-    // datatype = 'datatype' NAME '{' property* '}' ;
+    // datatype = 'datatype' NAME supertypes? '{' property* '}' ;
+    // supertypes = ':' [ typeReference / ',']+ ;
     fun datatype(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): Datatype {
         val namespace = arg as Namespace
         val name = children[0].nonSkipMatchedText
         val result = DatatypeSimple(namespace, name)
-        children[1].branchNonSkipChildren.forEach {
+        if (children[1].isEmptyMatch.not()) {
+            children[1].branchNonSkipChildren[0].branchNonSkipChildren[0].branchNonSkipChildren.forEach {
+                val st = super.transform<TypeReference>(it, result)
+                result.addSuperType(st)
+            }
+        }
+        children[2].branchNonSkipChildren.forEach {
             val p = super.transform<DatatypeProperty>(it, result)
             result.addProperty(p)
         }
         return result
     }
-
 
     // property = characteristic NAME : typeReference ;
     fun property(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): DatatypeProperty {

@@ -67,14 +67,18 @@ class DatatypeRegistry : DatatypeModel {
 	private val _datatypes = mutableMapOf<String, Datatype>()
 	private val _collection = mutableMapOf<String,CollectionType>()
 	private val _primitive = mutableMapOf<String,PrimitiveType>()
-	private val _primitiveMappers = mutableMapOf<KClass<*>,PrimitiveMapper>()
+	private val _primitiveMappers = mutableMapOf<KClass<*>,PrimitiveMapper<*,*>>()
 
 	override val namespaces: List<Namespace>
 		get() {
 			return this._namespaces
 		}
 
-	fun registerFromConfigString(datatypeModel:String, primitiveMappers:Map<KClass<*>,PrimitiveMapper>) {
+	fun registerPrimitiveMapper(mapper:PrimitiveMapper<*,*>) {
+		this._primitiveMappers[mapper.primitiveKlass] = mapper
+	}
+
+	fun registerFromConfigString(datatypeModel:String, primitiveMappers:Map<KClass<*>,PrimitiveMapper<*,*>>) {
 		try {
 			this._primitiveMappers.putAll(primitiveMappers)
 			//TODO: use qualified names when kotlin JS reflection supports qualifiedName
@@ -138,10 +142,14 @@ class DatatypeRegistry : DatatypeModel {
 		return this._primitive[cls.simpleName]
 	}
 
-	fun findPrimitiveMapperFor(cls:KClass<*>) : PrimitiveMapper? {
+	fun findPrimitiveMapperFor(cls:KClass<*>) : PrimitiveMapper<*,*>? {
 		return this._primitiveMappers[cls]
 	}
-
+	fun findPrimitiveMapperFor(clsName:String) : PrimitiveMapper<*,*>? {
+		return this._primitiveMappers.values.first {
+			it.primitiveKlass.simpleName == clsName //FIXME: use qualified name when JS supports it!
+		}
+	}
 	fun findFirstByName(typeName: String): TypeDeclaration {
 		return this.namespaces.mapNotNull {
 			it.declaration[typeName]

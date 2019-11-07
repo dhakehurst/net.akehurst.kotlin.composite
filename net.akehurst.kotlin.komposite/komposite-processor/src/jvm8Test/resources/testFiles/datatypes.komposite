@@ -8,4 +8,8 @@ namespace net.akehurst.kotlin.composite.api {
         cal id2 : Int
   }
 
+  datatype TestDatatype2 : TestDatatype {
+
+  }
+
 }

@@ -54,7 +54,8 @@ object Komposite {
                 primitive = 'primitive' NAME ;
                 collection = 'collection' NAME '<' typeParameterList '>' ;
                 typeParameterList = [ NAME / ',']+ ;
-                datatype = 'datatype' NAME '{' property* '}' ;
+                datatype = 'datatype' NAME supertypes? '{' property* '}' ;
+                supertypes = ':' [ typeReference / ',']+ ;
                 property = characteristic NAME ':' typeReference ;
                 typeReference = path typeArgumentList? ;
                 typeArgumentList = '<' [ typeReference / ',']+ '>' ;

@@ -126,7 +126,7 @@ data class DatatypeSimple(
         override val name: String
 ) : Datatype {
 
-    private val _superTypes = mutableListOf<Datatype>()
+    private val _superTypes = mutableListOf<TypeReference>()
     private val _property = mutableMapOf<String, DatatypeProperty>()
 
     override val isPrimitive: Boolean = false
@@ -135,7 +135,7 @@ data class DatatypeSimple(
     override val clazz: KClass<*>
         get() = ModuleRegistry.classForName(this.qualifiedName("."))
 
-    override val superTypes: List<Datatype> = _superTypes
+    override val superTypes: List<TypeReference> = _superTypes
 
     override val property: Map<String, DatatypeProperty> = _property
 
@@ -159,7 +159,14 @@ data class DatatypeSimple(
 
     override val allExplicitProperty: Map<String, DatatypeProperty>
         get() {
-            return superTypes.flatMap { it.allExplicitProperty.values }.associate { Pair(it.name, it) } + this.property
+            return superTypes.flatMap {
+                val decl = it.type.declaration
+                if (decl is Datatype) {
+                    decl.allExplicitProperty.values
+                } else {
+                    emptyList()
+                }
+            }.associate { Pair(it.name, it) } + this.property
         }
 
     override val ignoredProperties: Set<DatatypeProperty>
@@ -167,7 +174,7 @@ data class DatatypeSimple(
             return property.values.filter { it.ignore }.toSet()
         }
 
-    fun addSuperType(value: Datatype) {
+    fun addSuperType(value: TypeReference) {
         _superTypes += value
     }
 

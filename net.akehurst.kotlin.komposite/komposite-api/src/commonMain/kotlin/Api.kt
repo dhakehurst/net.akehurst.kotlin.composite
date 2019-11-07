@@ -60,7 +60,7 @@ interface Datatype : TypeDeclaration {
 
     val clazz: KClass<*>
 
-    val superTypes: List<Datatype>
+    val superTypes: List<TypeReference>
 
     val property: Map<String, DatatypeProperty>
 
@@ -145,20 +145,19 @@ interface TypeInstance {
     val arguments: List<TypeInstance>
 }
 
-class PrimitiveMapper(
+class PrimitiveMapper<P,R>(
         val primitiveKlass: KClass<*>,
         val rawKlass: KClass<*>,
-        val toRaw: (Any) -> Any,
-        val fromRaw: (Any) -> Any
+        val toRaw: (P) -> R,
+        val toPrimitive: (R) -> P
 ) {
     companion object {
         fun <P : Any, R : Any> create(
                 primitiveKlass: KClass<P>,
                 rawKlass: KClass<R>,
                 toRaw: (P) -> R,
-                fromRaw: (R) -> P): PrimitiveMapper {
-            return PrimitiveMapper(primitiveKlass, rawKlass, toRaw as (Any) -> Any, fromRaw as (Any) -> Any)
-
+                toPrimitive: (R) -> P): PrimitiveMapper<P,R> {
+            return PrimitiveMapper<P,R>(primitiveKlass, rawKlass, toRaw as (P) -> R, toPrimitive as (R) -> P)
         }
     }
 }
