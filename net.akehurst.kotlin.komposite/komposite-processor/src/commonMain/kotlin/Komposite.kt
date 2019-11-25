@@ -57,7 +57,7 @@ object Komposite {
                 datatype = 'datatype' NAME supertypes? '{' property* '}' ;
                 supertypes = ':' [ typeReference / ',']+ ;
                 property = characteristic NAME ':' typeReference ;
-                typeReference = path typeArgumentList? ;
+                typeReference = path typeArgumentList? '?'?;
                 typeArgumentList = '<' [ typeReference / ',']+ '>' ;
                 characteristic
                    = 'val'    // reference, constructor argument

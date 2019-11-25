@@ -57,6 +57,12 @@ class KompositeWalker<P : Any?, A : Any?>(
         val nullValue: (path: List<String>, info: WalkInfo<P, A>) -> WalkInfo<P, A>
 ) {
 
+    companion object {
+        val ELEMENTS = "\$elements"
+        val KEY = "\$key"
+        val VALUE = "\$value"
+    }
+
     class Builder<P : Any?, A : Any?>() {
         private var _objectBegin: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: Datatype) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _objectEnd: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: Datatype) -> WalkInfo<P, A> = { _, info, _, _ -> info }
@@ -235,8 +241,9 @@ class KompositeWalker<P : Any?, A : Any?>(
     protected fun walkColl(owningProperty: DatatypeProperty?, path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>): WalkInfo<P, A> {
         val infolb = this.collBegin(path, info, type, coll)
         var acc = infolb.acc
+        val path_elements = path + ELEMENTS
         coll.forEachIndexed { index, element ->
-            val ppath = path + index.toString()
+            val ppath = path_elements + index.toString()
             val infobEl = WalkInfo(infolb.up, acc)
             val infoElb = this.collElementBegin(ppath, infobEl, element)
             val infoElv = this.walkCollValue(owningProperty, ppath, infoElb, element)
@@ -267,11 +274,12 @@ class KompositeWalker<P : Any?, A : Any?>(
     protected fun walkMap(owningProperty: DatatypeProperty?, path: List<String>, info: WalkInfo<P, A>, type: CollectionType, map: Map<*, *>): WalkInfo<P, A> {
         val infolb = this.mapBegin(path, info, map)
         var acc = infolb.acc
+        val path_entries = path + ELEMENTS
         map.entries.forEachIndexed { index, entry ->
             val infobEl = WalkInfo(infolb.up, acc)
-            val ppath = path + index.toString()
-            val ppathKey = ppath + "key"
-            val ppathValue = ppath + "value"
+            val ppath = path_entries + index.toString()
+            val ppathKey = ppath + KEY
+            val ppathValue = ppath + VALUE
             val infomekb = this.mapEntryKeyBegin(ppathKey, infobEl, entry)
             val infomekv = this.walkMapEntryKey(owningProperty, ppathKey, infomekb, entry.key)
             val infomeke = this.mapEntryKeyEnd(ppathKey, infomekv, entry)
