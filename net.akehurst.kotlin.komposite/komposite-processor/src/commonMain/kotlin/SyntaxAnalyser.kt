@@ -48,7 +48,7 @@ class SyntaxAnalyser : SyntaxAnalyserAbstract() {
     }
 
     override fun <T> transform(sppt: SharedPackedParseTree): T {
-        return this.transform<T>(sppt.root.asBranch, "") as T
+        return this.transform(sppt.root.asBranch, "")
     }
 
     // model = namespace* ;

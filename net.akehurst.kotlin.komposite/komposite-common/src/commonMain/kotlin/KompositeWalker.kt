@@ -58,6 +58,7 @@ class KompositeWalker<P : Any?, A : Any?>(
 ) {
 
     companion object {
+        //TODO: these really need to be configurable, the JSON serialiser assumes these values!
         val ELEMENTS = "\$elements"
         val KEY = "\$key"
         val VALUE = "\$value"

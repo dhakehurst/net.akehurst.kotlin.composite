@@ -162,7 +162,7 @@ class PrimitiveMapper<P,R>(
                 rawKlass: KClass<R>,
                 toRaw: (P) -> R,
                 toPrimitive: (R) -> P): PrimitiveMapper<P,R> {
-            return PrimitiveMapper<P,R>(primitiveKlass, rawKlass, toRaw as (P) -> R, toPrimitive as (R) -> P)
+            return PrimitiveMapper<P,R>(primitiveKlass, rawKlass, toRaw, toPrimitive)
         }
     }
 }
