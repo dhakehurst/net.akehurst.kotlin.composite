@@ -85,6 +85,11 @@ interface Datatype : TypeDeclaration {
     val explicitReferenceProperties: Set<DatatypeProperty>
 
     /**
+     * all supertypes (from this and its supertypes) that are explicitly defined
+     */
+    val allSuperTypes: List<TypeReference>
+
+    /**
      * all properties (from this and its supertypes) that are explicitly defined
      */
     val allExplicitProperty: Map<String, DatatypeProperty>

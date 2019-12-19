@@ -60,6 +60,7 @@ class KompositeWalker<P : Any?, A : Any?>(
     companion object {
         //TODO: these really need to be configurable, the JSON serialiser assumes these values!
         val ELEMENTS = "\$elements"
+        val ENTRIES = "\$entries"
         val KEY = "\$key"
         val VALUE = "\$value"
     }
@@ -211,14 +212,15 @@ class KompositeWalker<P : Any?, A : Any?>(
             val infoob = this.objectBegin(path, info, obj, dt)
             var acc = infoob.acc
 
-            obj.reflect().allPropertyNames.forEach { propName ->
-                val prop = dt.allExplicitProperty[propName]
-                        ?: DatatypePropertySimple(dt, propName, DatatypeModelSimple.ANY_TYPE_REF { tref -> dt.namespace.model.resolve(tref) }) //default is a reference property
+            //obj.reflect().allPropertyNames.forEach { propName ->
+            //    val prop = dt.allExplicitProperty[propName]
+            //            ?: DatatypePropertySimple(dt, propName, DatatypeModelSimple.ANY_TYPE_REF { tref -> dt.namespace.model.resolve(tref) }) //default is a reference property
+            dt.allExplicitProperty.values.forEach { prop ->
                 if (prop.ignore) {
                     //TODO: log!
                 } else {
                     val propValue = prop.get(obj)
-                    val ppath = path + propName
+                    val ppath = path + prop.name
                     val infopb = this.propertyBegin(ppath, WalkInfo(infoob.up, acc), prop)
                     val infowp = this.walkPropertyValue(prop, ppath, WalkInfo(infoob.up, infopb.acc), propValue)
                     val infope = this.propertyEnd(ppath, WalkInfo(infoob.up, infowp.acc), prop)
@@ -275,7 +277,7 @@ class KompositeWalker<P : Any?, A : Any?>(
     protected fun walkMap(owningProperty: DatatypeProperty?, path: List<String>, info: WalkInfo<P, A>, type: CollectionType, map: Map<*, *>): WalkInfo<P, A> {
         val infolb = this.mapBegin(path, info, map)
         var acc = infolb.acc
-        val path_entries = path + ELEMENTS
+        val path_entries = path + ENTRIES
         map.entries.forEachIndexed { index, entry ->
             val infobEl = WalkInfo(infolb.up, acc)
             val ppath = path_entries + index.toString()

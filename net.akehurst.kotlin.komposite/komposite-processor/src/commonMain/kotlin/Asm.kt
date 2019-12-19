@@ -157,6 +157,18 @@ data class DatatypeSimple(
             return property.values.filter { it.isReference }.toSet()
         }
 
+    override val allSuperTypes: List<TypeReference>
+        get() {
+            return superTypes + superTypes.flatMap {
+                val decl = it.type.declaration
+                if (decl is Datatype) {
+                    decl.allSuperTypes
+                } else {
+                    emptyList()
+                }
+            }
+        }
+
     override val allExplicitProperty: Map<String, DatatypeProperty>
         get() {
             return superTypes.flatMap {
