@@ -132,7 +132,7 @@ class DatatypeRegistry : DatatypeModel {
 		return this._datatypes[cls.simpleName]
 	}
 	fun findCollectionTypeFor(value:Any) : CollectionType? {
-		//TODO: use qualified name where possible
+		//TODO: use qualified name when possible
 		return when(value) {
 			is List<*> -> this._collection["List"]
 			is Set<*> -> this._collection["Set"]
@@ -154,7 +154,7 @@ class DatatypeRegistry : DatatypeModel {
 		return this._primitiveMappers[cls]
 	}
 	fun findPrimitiveMapperFor(clsName:String) : PrimitiveMapper<*,*>? {
-		return this._primitiveMappers.values.first {
+		return this._primitiveMappers.values.firstOrNull {
 			it.primitiveKlass.simpleName == clsName //FIXME: use qualified name when JS supports it!
 		}
 	}

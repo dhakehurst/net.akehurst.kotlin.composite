@@ -25,7 +25,7 @@ import java.time.format.DateTimeFormatter
 
 plugins {
     kotlin("multiplatform") version("1.3.61") apply false
-    id("net.akehurst.kotlin.kt2ts") version("1.3.0") apply false
+    id("net.akehurst.kotlin.kt2ts") version("1.5.0") apply false
     id("com.jfrog.bintray") version("1.8.4") apply false
 }
 

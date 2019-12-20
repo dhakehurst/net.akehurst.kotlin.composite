@@ -35,6 +35,7 @@ data class WalkInfo<P, A>(
 )
 
 class KompositeWalker<P : Any?, A : Any?>(
+        val configuration: Configuration,
         val registry: DatatypeRegistry,
         val objectBegin: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: Datatype) -> WalkInfo<P, A>,
         val objectEnd: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: Datatype) -> WalkInfo<P, A>,
@@ -53,19 +54,19 @@ class KompositeWalker<P : Any?, A : Any?>(
         val collSeparate: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A>,
         val collEnd: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A>,
         val reference: (path: List<String>, info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A>,
-        val primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*,*>?) -> WalkInfo<P, A>,
+        val primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*, *>?) -> WalkInfo<P, A>,
         val nullValue: (path: List<String>, info: WalkInfo<P, A>) -> WalkInfo<P, A>
 ) {
 
-    companion object {
-        //TODO: these really need to be configurable, the JSON serialiser assumes these values!
-        val ELEMENTS = "\$elements"
-        val ENTRIES = "\$entries"
-        val KEY = "\$key"
-        val VALUE = "\$value"
-    }
+    class Configuration(
+            var ELEMENTS: String = "\$elements",
+            var ENTRIES: String = "\$entries",
+            var KEY: String = "\$key",
+            var VALUE: String = "\$value"
+    )
 
     class Builder<P : Any?, A : Any?>() {
+        private var _configuration: Configuration = Configuration()
         private var _objectBegin: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: Datatype) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _objectEnd: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: Datatype) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _propertyBegin: (path: List<String>, info: WalkInfo<P, A>, property: DatatypeProperty) -> WalkInfo<P, A> = { _, info, _ -> info }
@@ -83,8 +84,12 @@ class KompositeWalker<P : Any?, A : Any?>(
         private var _collSeparate: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A> = { _, info, _, _, _ -> info }
         private var _collEnd: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _reference: (path: List<String>, info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A> = { _, info, _, _ -> info }
-        private var _primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*,*>?) -> WalkInfo<P, A> = { _, info, _, _ -> info }
+        private var _primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*, *>?) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _nullValue: (path: List<String>, info: WalkInfo<P, A>) -> WalkInfo<P, A> = { _, info -> info }
+
+        fun configure(configuration:Configuration.()->Unit) {
+            this._configuration.apply(configuration)
+        }
 
         fun objectBegin(func: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: Datatype) -> WalkInfo<P, A>) {
             this._objectBegin = func
@@ -154,7 +159,7 @@ class KompositeWalker<P : Any?, A : Any?>(
             this._reference = func
         }
 
-        fun primitive(func: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*,*>?) -> WalkInfo<P, A>) {
+        fun primitive(func: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*, *>?) -> WalkInfo<P, A>) {
             this._primitive = func
         }
 
@@ -164,6 +169,7 @@ class KompositeWalker<P : Any?, A : Any?>(
 
         fun build(registry: DatatypeRegistry): KompositeWalker<P, A> {
             return KompositeWalker(
+                    _configuration,
                     registry,
                     _objectBegin, _objectEnd,
                     _propertyBegin, _propertyEnd,
@@ -244,7 +250,7 @@ class KompositeWalker<P : Any?, A : Any?>(
     protected fun walkColl(owningProperty: DatatypeProperty?, path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>): WalkInfo<P, A> {
         val infolb = this.collBegin(path, info, type, coll)
         var acc = infolb.acc
-        val path_elements = path + ELEMENTS
+        val path_elements = path + this.configuration.ELEMENTS
         coll.forEachIndexed { index, element ->
             val ppath = path_elements + index.toString()
             val infobEl = WalkInfo(infolb.up, acc)
@@ -277,12 +283,12 @@ class KompositeWalker<P : Any?, A : Any?>(
     protected fun walkMap(owningProperty: DatatypeProperty?, path: List<String>, info: WalkInfo<P, A>, type: CollectionType, map: Map<*, *>): WalkInfo<P, A> {
         val infolb = this.mapBegin(path, info, map)
         var acc = infolb.acc
-        val path_entries = path + ENTRIES
+        val path_entries = path + this.configuration.ENTRIES
         map.entries.forEachIndexed { index, entry ->
             val infobEl = WalkInfo(infolb.up, acc)
             val ppath = path_entries + index.toString()
-            val ppathKey = ppath + KEY
-            val ppathValue = ppath + VALUE
+            val ppathKey = ppath + this.configuration.KEY
+            val ppathValue = ppath + this.configuration.VALUE
             val infomekb = this.mapEntryKeyBegin(ppathKey, infobEl, entry)
             val infomekv = this.walkMapEntryKey(owningProperty, ppathKey, infomekb, entry.key)
             val infomeke = this.mapEntryKeyEnd(ppathKey, infomekv, entry)
