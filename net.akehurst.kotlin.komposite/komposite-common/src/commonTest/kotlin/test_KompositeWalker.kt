@@ -136,7 +136,6 @@ class test_KompositeWalker {
                 when(value) {
                     is String -> result += "'${value}'"
                 }
-
                 info
             }
         }

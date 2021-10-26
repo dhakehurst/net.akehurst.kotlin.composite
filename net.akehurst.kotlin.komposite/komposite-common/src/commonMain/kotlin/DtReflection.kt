@@ -39,7 +39,17 @@ fun DatatypeProperty.get(obj: Any): Any? {
 fun DatatypeProperty.set(obj: Any, value: Any?) {
     try {
         val reflect = obj.reflect()
-        reflect.setProperty(this.name, value)
+        if (reflect.isPropertyMutable(this.name)) {
+            reflect.setProperty(this.name, value)
+        } else {
+            val existingValue = reflect.getProperty(this.name)
+            if (existingValue is MutableList<*> && value is List<*>) {
+                existingValue.clear()
+                (existingValue as MutableList<Any>).addAll(value as List<Any>)
+            } else {
+                error("Cannot set property ${this.name}.${this.name} to ${value} because it is not a mutable property or Mutable collection")
+            }
+        }
     } catch (t: Throwable) {
         throw KompositeException("Unable to set property ${this.name}.${this.name} to ${value} due to ${t.message ?: "Unknown"}")
     }

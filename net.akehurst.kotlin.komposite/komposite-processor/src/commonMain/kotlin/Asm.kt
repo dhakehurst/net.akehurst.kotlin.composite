@@ -27,9 +27,9 @@ class DatatypeModelSimple : DatatypeModel {
         //TODO: 'close' this set of instances
         fun ANY_TYPE_REF(resolver: (TypeReference)->TypeDeclaration) = TypeReferenceSimple(resolver, listOf("kotlin", "Any"), emptyList())
 
-        fun ARRAY_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "Array", listOf("T"))
-        fun LIST_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "List", listOf("T"))
-        fun SET_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "Set", listOf("T"))
+        fun ARRAY_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "Array", listOf("E"))
+        fun LIST_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "List", listOf("E"))
+        fun SET_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "Set", listOf("E"))
         fun MAP_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "Map", listOf("K", "V"))
     }
 

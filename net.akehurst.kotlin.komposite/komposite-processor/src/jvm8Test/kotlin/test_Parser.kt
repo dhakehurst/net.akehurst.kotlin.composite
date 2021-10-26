@@ -62,7 +62,7 @@ class test_Parser(val data:Data) {
 
     @Test
     fun test() {
-        val result = processor.parse("model", this.data.fileContent)
+        val result = processor.parse( this.data.fileContent,"model")
         assertNotNull(result)
         //val resultStr = result.asString
         //assertEquals(original, resultStr)

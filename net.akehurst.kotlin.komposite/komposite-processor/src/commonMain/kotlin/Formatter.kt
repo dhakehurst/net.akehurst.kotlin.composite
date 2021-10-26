@@ -16,7 +16,7 @@
 
 package net.akehurst.kotlin.komposite.processor
 
-import net.akehurst.language.processor.FormatterAbstract
+import net.akehurst.language.agl.processor.FormatterAbstract
 
 class Formatter : FormatterAbstract() {
 

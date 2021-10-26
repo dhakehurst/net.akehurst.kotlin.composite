@@ -35,8 +35,11 @@ class test_Processor() {
     @Test
     fun test() {
         val komposite = """
+            namespace kotlin.collections {
+                collection List<E>
+            }
             namespace net.akehurst.kotlin.composite.api {
-            
+              
               datatype TestDatatype {
                     val id : String
                     car prop1 : String
@@ -54,7 +57,7 @@ class test_Processor() {
             
             }
         """.trimIndent()
-        val result: DatatypeModel = processor.process("model", komposite)
+        val result: DatatypeModel = processor.process<DatatypeModel,Any>( komposite,"model").first!!
         assertNotNull(result)
         //val resultStr = result.asString
         //assertEquals(original, resultStr)

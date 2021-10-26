@@ -35,10 +35,10 @@ class DatatypeRegistry : DatatypeModel {
                 primitive String
             }
             namespace kotlin.collections {
-                collection Array<T>
-                collection Collection<T>
-                collection List<T>
-                collection Set<T>
+                collection Array<E>
+                collection Collection<E>
+                collection List<E>
+                collection Set<E>
                 collection Map<K,V>
             }
         """.trimIndent()

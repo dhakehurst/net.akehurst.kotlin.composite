@@ -17,21 +17,20 @@
 package net.akehurst.kotlin.komposite.processor
 
 import net.akehurst.kotlin.komposite.api.DatatypeModel
+import net.akehurst.language.agl.processor.Agl
 import net.akehurst.language.api.processor.LanguageProcessor
-import net.akehurst.language.processor.Agl
-import kotlin.js.JsName
 
 object Komposite {
 
-    private var _processor:LanguageProcessor? = null
+    private var _processor: LanguageProcessor? = null
 
     internal fun processor(): LanguageProcessor {
-        if (null== _processor) {
+        if (null == _processor) {
             val grammarStr = fetchGrammarStr()
-            _processor = Agl.processor(
-                    grammarStr,
-                    SyntaxAnalyser(),
-                    Formatter()
+            _processor = Agl.processorFromString(
+                grammarDefinitionStr = grammarStr,
+                syntaxAnalyser = KompositeSyntaxAnalyser(),
+                formatter = Formatter()
             )
         }
         return _processor!!
@@ -77,8 +76,8 @@ object Komposite {
 
     }
 
-    @JsName("process")
-    fun process(datatypeModel:String) : DatatypeModel {
-        return this.processor().process("model", datatypeModel)
+    fun process(datatypeModel: String): DatatypeModel {
+        //TODO: handle issues
+        return this.processor().process<DatatypeModel, Any>(datatypeModel, "model").first!!
     }
 }
