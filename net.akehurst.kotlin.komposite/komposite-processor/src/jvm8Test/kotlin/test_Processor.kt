@@ -40,12 +40,15 @@ class test_Processor() {
             }
             namespace net.akehurst.kotlin.composite.api {
               
+              primitive XXXX
+              enum YYYY
+              
               datatype TestDatatype {
-                    val id : String
-                    car prop1 : String
-                    var prop2 : Int
+                    composite-val id : String
+                    composite-var prop1 : String
+                    reference-var prop2 : Int
                     dis prop4 : String
-                    cal id2 : Int
+                    composite-val id2 : Int
               }
               
               datatype Dt2 {

@@ -58,6 +58,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
             "path" -> path(branch, branch.branchNonSkipChildren, arg) as T
             "declaration" -> declaration(branch, branch.branchNonSkipChildren, arg) as T
             "primitive" -> primitive(branch, branch.branchNonSkipChildren, arg) as T
+            "enum" -> enum(branch, branch.branchNonSkipChildren, arg) as T
             "collection" -> collection(branch, branch.branchNonSkipChildren, arg) as T
             "datatype" -> datatype(branch, branch.branchNonSkipChildren, arg) as T
             "property" -> property(branch, branch.branchNonSkipChildren, arg) as T
@@ -97,7 +98,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
         return children.map { it.nonSkipMatchedText }
     }
 
-    // declaration = primitive | collection | datatype ;
+    // declaration = primitive | enum | collection | datatype ;
     private fun declaration(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): TypeDeclaration {
         return this.transformBranch(children[0], arg)
     }
@@ -107,6 +108,14 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
         val namespace = arg as Namespace
         val name = children[0].nonSkipMatchedText
         val result = PrimitiveTypeSimple(namespace, name)
+        return result
+    }
+
+    // enum = 'enum' NAME ;
+    private fun enum(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): EnumType {
+        val namespace = arg as Namespace
+        val name = children[0].nonSkipMatchedText
+        val result = EnumTypeSimple(namespace, name)
         return result
     }
 
@@ -147,16 +156,16 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
 
         val result = DatatypePropertySimple(datatype, name, typeReference)
         when (char) {
-            DatatypePropertyCharacteristic.`val` -> {
+            DatatypePropertyCharacteristic.reference_val -> {
                 result.isReference = true
                 result.setIdentityIndex(datatype.identityProperties.size)
             }
-            DatatypePropertyCharacteristic.`var` -> result.isReference = true
-            DatatypePropertyCharacteristic.cal -> {
+            DatatypePropertyCharacteristic.reference_var -> result.isReference = true
+            DatatypePropertyCharacteristic.composite_val -> {
                 result.isComposite = true
                 result.setIdentityIndex(datatype.identityProperties.size)
             }
-            DatatypePropertyCharacteristic.car -> result.isComposite = true
+            DatatypePropertyCharacteristic.composite_var -> result.isComposite = true
             DatatypePropertyCharacteristic.dis -> result.ignore = true
             else ->throw SyntaxAnalyserException("unknown characteristic")
         }
@@ -170,7 +179,14 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
     //                 | 'dis'    // disregard / ignore
     //                 ;
     private fun characteristic(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): DatatypePropertyCharacteristic {
-        return DatatypePropertyCharacteristic.valueOf(target.nonSkipMatchedText)
+        return when (target.nonSkipMatchedText) {
+            "reference-val"->DatatypePropertyCharacteristic.reference_val
+            "reference-var"->DatatypePropertyCharacteristic.reference_var
+            "composite-val"->DatatypePropertyCharacteristic.composite_val
+            "composite-var"->DatatypePropertyCharacteristic.composite_var
+            "dis"->DatatypePropertyCharacteristic.dis
+            else -> error("Value not allowed '${target.nonSkipMatchedText}'")
+        }
     }
 
     // typeReference = path typeArgumentList? ;

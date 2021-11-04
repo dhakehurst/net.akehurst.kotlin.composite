@@ -65,6 +65,7 @@ class DatatypeRegistry : DatatypeModel {
 
 	private val _namespaces = mutableListOf<Namespace>()
 	private val _datatypes = mutableMapOf<String, Datatype>()
+	private val _enum = mutableMapOf<String, EnumType>()
 	private val _collection = mutableMapOf<String,CollectionType>()
 	private val _primitive = mutableMapOf<String,PrimitiveType>()
 	private val _primitiveMappers = mutableMapOf<KClass<*>,PrimitiveMapper<*,*>>()
@@ -87,6 +88,7 @@ class DatatypeRegistry : DatatypeModel {
 				ns.model = this
 				this._namespaces.add(ns)
 				_primitive += ns.declaration.values.filterIsInstance<PrimitiveType>().associate { Pair(it.name, it) }
+				_enum += ns.declaration.values.filterIsInstance<EnumType>().associate { Pair(it.name, it) }
 				_collection += ns.declaration.values.filterIsInstance<CollectionType>().associate { Pair(it.name, it) }
 				_datatypes += ns.declaration.values.filterIsInstance<Datatype>().associate { Pair(it.name, it) }
 			}
@@ -98,6 +100,10 @@ class DatatypeRegistry : DatatypeModel {
 
 	fun isPrimitive(value:Any) : Boolean {
 		return this._primitive.containsKey(value::class.simpleName)
+	}
+
+	fun isEnum(value:Any): Boolean {
+		return this._enum.containsKey(value::class.simpleName)
 	}
 
 	fun isCollection(value:Any) : Boolean {
@@ -117,11 +123,17 @@ class DatatypeRegistry : DatatypeModel {
 	}
 
 	fun findTypeDeclarationByName(name:String) : TypeDeclaration? {
-		return this._datatypes[name] ?: this._primitive[name] ?: this._collection[name]
+		return this._datatypes[name]
+			?: this._primitive[name]
+			?: this._enum[name]
+			?: this._collection[name]
 	}
 	fun findTypeDeclarationByClass(cls:KClass<*>) : TypeDeclaration? {
 		//TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
-		return this._datatypes[cls.simpleName] ?: this._primitive[cls.simpleName] ?: this._collection[cls.simpleName]
+		return this._datatypes[cls.simpleName]
+			?: this._primitive[cls.simpleName]
+			?: this._enum[cls.simpleName]
+			?: this._collection[cls.simpleName]
 	}
 
 	fun findDatatypeByName(name:String) : Datatype? {
@@ -149,7 +161,13 @@ class DatatypeRegistry : DatatypeModel {
 		//TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
 		return this._primitive[cls.simpleName]
 	}
-
+	fun findEnumByName(name:String) : EnumType? {
+		return this._enum[name]
+	}
+	fun findEnumByClass(cls:KClass<*>) : EnumType? {
+		//TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
+		return this._enum[cls.simpleName]
+	}
 	fun findPrimitiveMapperFor(cls:KClass<*>) : PrimitiveMapper<*,*>? {
 		return this._primitiveMappers[cls]
 	}

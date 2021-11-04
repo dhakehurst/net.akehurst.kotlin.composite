@@ -1,9 +1,9 @@
 namespace net.akehurst.kotlin.composite.api {
 
   datatype TestDatatype {
-        val id : List<String>
-        car prop1 : Set<String>
-        var prop2 : Map<Int,String>
+        reference-val id : List<String>
+        composite-var prop1 : Set<String>
+        reference-var prop2 : Map<Int,String>
   }
 
 }

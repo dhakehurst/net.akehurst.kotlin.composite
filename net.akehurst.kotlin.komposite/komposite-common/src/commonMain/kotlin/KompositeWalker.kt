@@ -55,6 +55,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         val collEnd: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A>,
         val reference: (path: List<String>, info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A>,
         val primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*, *>?) -> WalkInfo<P, A>,
+        val enum: (path: List<String>, info: WalkInfo<P, A>, enum: Enum<*>) -> WalkInfo<P, A>,
         val nullValue: (path: List<String>, info: WalkInfo<P, A>) -> WalkInfo<P, A>
 ) {
 
@@ -85,6 +86,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         private var _collEnd: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _reference: (path: List<String>, info: WalkInfo<P, A>, value: Any, property: DatatypeProperty) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*, *>?) -> WalkInfo<P, A> = { _, info, _, _ -> info }
+        private var _enum: (path: List<String>, info: WalkInfo<P, A>, enum: Enum<*>) -> WalkInfo<P, A> = { _, info, _ -> info }
         private var _nullValue: (path: List<String>, info: WalkInfo<P, A>) -> WalkInfo<P, A> = { _, info -> info }
 
         fun configure(configuration:Configuration.()->Unit) {
@@ -163,6 +165,10 @@ class KompositeWalker<P : Any?, A : Any?>(
             this._primitive = func
         }
 
+        fun enum(func: (path: List<String>, info: WalkInfo<P, A>, enum: Enum<*>) -> WalkInfo<P, A>) {
+            this._enum = func
+        }
+
         fun nullValue(func: (path: List<String>, info: WalkInfo<P, A>) -> WalkInfo<P, A>) {
             this._nullValue = func
         }
@@ -175,7 +181,7 @@ class KompositeWalker<P : Any?, A : Any?>(
                     _propertyBegin, _propertyEnd,
                     _mapBegin, _mapEntryKeyBegin, _mapEntryKeyEnd, _mapEntryValueBegin, _mapEntryValueEnd, _mapSeparate, _mapEnd,
                     _collBegin, _collElementBegin, _collElementEnd, _collSeparate, _collEnd,
-                    _reference, _primitive, _nullValue
+                    _reference, _primitive, _enum, _nullValue
             )
         }
     }
@@ -189,6 +195,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         return when {
             null == data -> walkNull(path, info)
             registry.isPrimitive(data) -> walkPrimitive(path, info, data)
+            registry.isEnum(data) -> walkEnum(path, info, data)
             registry.isCollection(data) -> walkCollection(owningProperty, path, info, data)
             registry.hasDatatypeInfo(data) -> walkObject(owningProperty, path, info, data)
             else -> throw KompositeException("Don't know how to walk object of class: ${data::class}")
@@ -336,6 +343,10 @@ class KompositeWalker<P : Any?, A : Any?>(
         }
     }
 
+    protected fun walkEnum(path: List<String>, info: WalkInfo<P, A>, enum: Any): WalkInfo<P, A> {
+        //val mapper = this.registry.findPrimitiveMapperFor(primitive::class)
+        return this.enum(path, info, enum as Enum<*>)
+    }
 
     protected fun walkPrimitive(path: List<String>, info: WalkInfo<P, A>, primitive: Any): WalkInfo<P, A> {
         val mapper = this.registry.findPrimitiveMapperFor(primitive::class)

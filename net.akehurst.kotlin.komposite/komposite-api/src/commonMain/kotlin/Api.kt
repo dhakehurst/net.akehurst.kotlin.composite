@@ -39,12 +39,16 @@ interface TypeDeclaration {
     val namespace: Namespace
     val name: String
     val isPrimitive : Boolean
+    val isEnum: Boolean
     val isCollection : Boolean
 
     fun qualifiedName(separator: String): String
 }
 
 interface PrimitiveType : TypeDeclaration {
+}
+
+interface EnumType : TypeDeclaration {
 }
 
 interface CollectionType : TypeDeclaration {
@@ -137,10 +141,10 @@ interface DatatypeProperty {
 }
 
 enum class DatatypePropertyCharacteristic {
-    `val`, // reference, constructor argument
-    `var`, // reference mutable property
-    cal,   // composite, constructor argument
-    car,   // composite mutable property
+    reference_val, // reference, constructor argument
+    reference_var, // reference mutable property
+    composite_val,   // composite, constructor argument
+    composite_var,   // composite mutable property
     dis    // disregard / ignore
 }
 

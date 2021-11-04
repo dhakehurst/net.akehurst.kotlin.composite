@@ -113,7 +113,7 @@ class test_KompositeWalker {
             namespace net.akehurst.kotlin.komposite.common {
                primitive String
                datatype A {
-                 val prop1:String
+                 composite-val prop1:String
                }
             }
         """, emptyMap())

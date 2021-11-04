@@ -49,8 +49,9 @@ object Komposite {
                 model = namespace* ;
                 namespace = 'namespace' path '{' declaration* '}' ;
                 path = [ NAME / '.']+ ;
-                declaration = primitive | collection | datatype ;
+                declaration = primitive | enum | collection | datatype ;
                 primitive = 'primitive' NAME ;
+                enum = 'enum' NAME ;
                 collection = 'collection' NAME '<' typeParameterList '>' ;
                 typeParameterList = [ NAME / ',']+ ;
                 datatype = 'datatype' NAME supertypes? '{' property* '}' ;
@@ -59,10 +60,10 @@ object Komposite {
                 typeReference = path typeArgumentList? '?'?;
                 typeArgumentList = '<' [ typeReference / ',']+ '>' ;
                 characteristic
-                   = 'val'    // reference, constructor argument
-                   | 'var'    // reference mutable property
-                   | 'cal'    // composite, constructor argument
-                   | 'car'    // composite mutable property
+                   = 'reference-val'    // reference, constructor argument
+                   | 'reference-var'    // reference mutable property
+                   | 'composite-val'    // composite, constructor argument
+                   | 'composite-var'    // composite mutable property
                    | 'dis'    // disregard / ignore
                    ;
             

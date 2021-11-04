@@ -19,15 +19,14 @@ package net.akehurst.kotlin.komposite.processor
 import net.akehurst.language.api.processor.LanguageProcessor
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 
 
 @RunWith(Parameterized::class)
-class test_Parser(val data:Data) {
+class test_Parser(val data: Data) {
 
-    class Data(val sourceFileName: String, val fileContent:String) {
+    class Data(val sourceFileName: String, val fileContent: String) {
 
         // --- Object ---
         override fun toString(): String {
@@ -39,11 +38,13 @@ class test_Parser(val data:Data) {
         var processor: LanguageProcessor = Komposite.processor()
 
         val sourceFiles = listOf(
-                "testFiles/empty.komposite",
-                "testFiles/emptyNamespace.komposite",
-                "testFiles/emptyDatatype.komposite",
-                "testFiles/datatypes.komposite",
-                "testFiles/generictypes.komposite"
+            "testFiles/empty.komposite",
+            "testFiles/emptyNamespace.komposite",
+            "testFiles/emptyDatatype.komposite",
+            "testFiles/primitive.komposite",
+            "testFiles/enum.komposite",
+            "testFiles/datatypes.komposite",
+            "testFiles/generictypes.komposite"
         )
 
 
@@ -62,8 +63,8 @@ class test_Parser(val data:Data) {
 
     @Test
     fun test() {
-        val result = processor.parse( this.data.fileContent,"model")
-        assertNotNull(result)
+        val (sppt, issues) = processor.parse(this.data.fileContent, "model")
+        assertNotNull(sppt)
         //val resultStr = result.asString
         //assertEquals(original, resultStr)
     }
