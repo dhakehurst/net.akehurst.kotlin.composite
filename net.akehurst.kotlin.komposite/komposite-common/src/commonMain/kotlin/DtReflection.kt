@@ -18,6 +18,7 @@ package net.akehurst.kotlin.komposite.common
 
 import net.akehurst.kotlin.komposite.api.Datatype
 import net.akehurst.kotlin.komposite.api.DatatypeProperty
+import net.akehurst.kotlin.komposite.api.EnumType
 import net.akehurst.kotlin.komposite.api.KompositeException
 import net.akehurst.kotlinx.reflect.reflect
 
@@ -46,9 +47,9 @@ fun DatatypeProperty.set(obj: Any, value: Any?) {
             if (existingValue is MutableCollection<*> && value is Collection<*>) {
                 existingValue.clear()
                 (existingValue as MutableCollection<Any>).addAll(value as Collection<Any>)
-            } else if (existingValue is MutableMap<*,*> && value is Map<*,*>) {
+            } else if (existingValue is MutableMap<*, *> && value is Map<*, *>) {
                 existingValue.clear()
-                (existingValue as MutableMap<Any,Any>).putAll(value as Map<Any,Any>)
+                (existingValue as MutableMap<Any, Any>).putAll(value as Map<Any, Any>)
             } else {
                 error("Cannot set property ${this.name}.${this.name} to ${value} because it is not a mutable property or Mutable collection")
             }
@@ -56,4 +57,8 @@ fun DatatypeProperty.set(obj: Any, value: Any?) {
     } catch (t: Throwable) {
         throw KompositeException("Unable to set property ${this.name}.${this.name} to ${value} due to ${t.message ?: "Unknown"}")
     }
+}
+
+fun <E : Enum<E>> EnumType.valueOf(name: String): Enum<E> {
+    return this.clazz.reflect().enumValueOf(name)
 }

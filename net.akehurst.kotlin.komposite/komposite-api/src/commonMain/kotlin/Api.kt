@@ -49,6 +49,7 @@ interface PrimitiveType : TypeDeclaration {
 }
 
 interface EnumType : TypeDeclaration {
+    val clazz:KClass<Enum<*>>
 }
 
 interface CollectionType : TypeDeclaration {

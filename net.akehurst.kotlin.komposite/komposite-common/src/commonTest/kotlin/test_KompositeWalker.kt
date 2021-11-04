@@ -145,4 +145,5 @@ class test_KompositeWalker {
         assertEquals(expected, result)
     }
 
+    //TODO
 }

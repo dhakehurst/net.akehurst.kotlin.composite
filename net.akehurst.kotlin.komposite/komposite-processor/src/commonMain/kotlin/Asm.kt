@@ -114,6 +114,9 @@ data class EnumTypeSimple(
     override fun qualifiedName(separator: String): String {
         return this.namespace.qualifiedName(separator) + separator + this.name
     }
+
+    override val clazz: KClass<Enum<*>>
+        get() = KotlinxReflect.classForName(this.qualifiedName(".")) as KClass<Enum<*>>
 }
 
 data class CollectionTypeSimple(
