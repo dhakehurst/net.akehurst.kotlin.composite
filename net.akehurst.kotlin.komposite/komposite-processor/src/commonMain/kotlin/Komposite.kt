@@ -44,7 +44,7 @@ object Komposite {
                 skip WHITE_SPACE = "\s+" ;
                 skip COMMENT = MULTI_LINE_COMMENT | SINGLE_LINE_COMMENT ;
                      MULTI_LINE_COMMENT = "[/][*](?:.|\n)*?[*][/]" ;
-                     SINGLE_LINE_COMMENT = "//(?:.*)?$" ;
+                     SINGLE_LINE_COMMENT = "//[^\n\r]*" ;
             
                 model = namespace* ;
                 namespace = 'namespace' path '{' declaration* '}' ;

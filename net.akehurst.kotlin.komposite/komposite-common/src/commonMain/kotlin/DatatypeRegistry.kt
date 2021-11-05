@@ -136,6 +136,10 @@ class DatatypeRegistry : DatatypeModel {
 			?: this._collection[cls.simpleName]
 	}
 
+	fun findAssignableDatatypeByName(cls:KClass<*>) : List<Datatype> {
+		TODO()
+
+	}
 	fun findDatatypeByName(name:String) : Datatype? {
 		return this._datatypes[name]
 	}
