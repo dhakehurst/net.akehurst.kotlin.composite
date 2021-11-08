@@ -189,7 +189,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
         }
     }
 
-    // typeReference = path typeArgumentList? ;
+    // typeReference = path typeArgumentList? '?'?;
     private fun typeReference(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): TypeReference {
         val path = children[0]
         val typeArgumentList = children[1]

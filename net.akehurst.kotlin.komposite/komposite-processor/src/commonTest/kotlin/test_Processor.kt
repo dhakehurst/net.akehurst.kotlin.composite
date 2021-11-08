@@ -18,9 +18,6 @@ package net.akehurst.kotlin.komposite.processor
 
 import net.akehurst.kotlin.komposite.api.DatatypeModel
 import net.akehurst.language.api.processor.LanguageProcessor
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
-import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 

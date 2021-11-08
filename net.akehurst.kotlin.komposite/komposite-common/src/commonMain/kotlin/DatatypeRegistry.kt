@@ -17,13 +17,14 @@
 package net.akehurst.kotlin.komposite.common
 
 import net.akehurst.kotlin.komposite.api.*
-import kotlin.reflect.KClass
 import net.akehurst.kotlin.komposite.processor.Komposite
+import net.akehurst.kotlin.komposite.processor.komposite
+import kotlin.reflect.KClass
 
 class DatatypeRegistry : DatatypeModel {
 
-	companion object {
-		val KOTLIN_STD = """
+    companion object {
+        val KOTLIN_STD_STRING = """
             namespace kotlin {
                 primitive Boolean
                 primitive Byte
@@ -43,7 +44,27 @@ class DatatypeRegistry : DatatypeModel {
             }
         """.trimIndent()
 
-		val JAVA_STD = """
+        val KOTLIN_STD_MODEL = komposite {
+            namespace("kotlin") {
+                primitiveType("Boolean")
+                primitiveType("Byte")
+                primitiveType("Short")
+                primitiveType("Int")
+                primitiveType("Long")
+                primitiveType("Float")
+                primitiveType("Double")
+                primitiveType("String")
+            }
+            namespace("kotlin.collections") {
+                collectionType("Array", listOf("E"))
+                collectionType("Collection", listOf("E"))
+                collectionType("List", listOf("E"))
+                collectionType("Set", listOf("E"))
+                collectionType("Map", listOf("K", "V"))
+            }
+        }
+
+        val JAVA_STD = """
             namespace java.lang {
                 primitive Boolean
                 primitive Integer
@@ -61,139 +82,152 @@ class DatatypeRegistry : DatatypeModel {
                 collection Map<K,V>
             }
         """.trimIndent()
-	}
+    }
 
-	private val _namespaces = mutableListOf<Namespace>()
-	private val _datatypes = mutableMapOf<String, Datatype>()
-	private val _enum = mutableMapOf<String, EnumType>()
-	private val _collection = mutableMapOf<String,CollectionType>()
-	private val _primitive = mutableMapOf<String,PrimitiveType>()
-	private val _primitiveMappers = mutableMapOf<KClass<*>,PrimitiveMapper<*,*>>()
+    private val _namespaces = mutableListOf<Namespace>()
+    private val _datatypes = mutableMapOf<String, Datatype>()
+    private val _enum = mutableMapOf<String, EnumType>()
+    private val _collection = mutableMapOf<String, CollectionType>()
+    private val _primitive = mutableMapOf<String, PrimitiveType>()
+    private val _primitiveMappers = mutableMapOf<KClass<*>, PrimitiveMapper<*, *>>()
 
-	override val namespaces: List<Namespace>
-		get() {
-			return this._namespaces
-		}
+    override val namespaces: List<Namespace>
+        get() {
+            return this._namespaces
+        }
 
-	fun registerPrimitiveMapper(mapper:PrimitiveMapper<*,*>) {
-		this._primitiveMappers[mapper.primitiveKlass] = mapper
-	}
+    fun registerPrimitiveMapper(mapper: PrimitiveMapper<*, *>) {
+        this._primitiveMappers[mapper.primitiveKlass] = mapper
+    }
 
-	fun registerFromConfigString(datatypeModel:String, primitiveMappers:Map<KClass<*>,PrimitiveMapper<*,*>>) {
-		try {
-			this._primitiveMappers.putAll(primitiveMappers)
-			//TODO: use qualified names when kotlin JS reflection supports qualifiedName
-			val dtm:DatatypeModel = Komposite.process(datatypeModel)
-			dtm.namespaces.forEach { ns->
-				ns.model = this
-				this._namespaces.add(ns)
-				_primitive += ns.declaration.values.filterIsInstance<PrimitiveType>().associate { Pair(it.name, it) }
-				_enum += ns.declaration.values.filterIsInstance<EnumType>().associate { Pair(it.name, it) }
-				_collection += ns.declaration.values.filterIsInstance<CollectionType>().associate { Pair(it.name, it) }
-				_datatypes += ns.declaration.values.filterIsInstance<Datatype>().associate { Pair(it.name, it) }
-			}
-		} catch (e:Exception) {
-			throw  KompositeException("Error trying to register datatypes from config string", e);
-		}
+    fun registerFromConfigString(kompositeModel: String, primitiveMappers: Map<KClass<*>, PrimitiveMapper<*, *>>) {
+        try {
+            val mdl: DatatypeModel = Komposite.process(kompositeModel)
+            this.registerFromKompositeModel(mdl, primitiveMappers)
+        } catch (e: Exception) {
+            throw  KompositeException("Error trying to register datatypes from config string", e);
+        }
+    }
 
-	}
+    fun registerFromKompositeModel(kompositeModel: DatatypeModel, primitiveMappers: Map<KClass<*>, PrimitiveMapper<*, *>>) {
+        this._primitiveMappers.putAll(primitiveMappers)
+        kompositeModel.namespaces.forEach { ns ->
+            ns.model = this
+            this._namespaces.add(ns)
+            this._primitive += ns.declaration.values.filterIsInstance<PrimitiveType>().associate { Pair(it.name, it) }
+            this._enum += ns.declaration.values.filterIsInstance<EnumType>().associate { Pair(it.name, it) }
+            this._collection += ns.declaration.values.filterIsInstance<CollectionType>().associate { Pair(it.name, it) }
+            this._datatypes += ns.declaration.values.filterIsInstance<Datatype>().associate { Pair(it.name, it) }
+        }
+    }
 
-	fun isPrimitive(value:Any) : Boolean {
-		return this._primitive.containsKey(value::class.simpleName)
-	}
+    fun isPrimitive(value: Any): Boolean {
+        return this._primitive.containsKey(value::class.simpleName)
+    }
 
-	fun isEnum(value:Any): Boolean {
-		return this._enum.containsKey(value::class.simpleName)
-	}
+    fun isEnum(value: Any): Boolean {
+        return this._enum.containsKey(value::class.simpleName)
+    }
 
-	fun isCollection(value:Any) : Boolean {
-		//TODO: use type hierachy so we can e.g. register List rather than ArrayList
-		return when (value) {
-			is List<*> -> this._collection.containsKey("List")
-			is Set<*> -> this._collection.containsKey("Set")
-			is Map<*,*> -> this._collection.containsKey("Map")
-			is Collection<*> -> this._collection.containsKey("Collection")
-			is Array<*> -> this._collection.containsKey("Array")
-			else -> this._collection.containsKey(value::class.simpleName)
-		}
-	}
+    fun isCollection(value: Any): Boolean {
+        //TODO: use type hierachy so we can e.g. register List rather than ArrayList
+        return when (value) {
+            is List<*> -> this._collection.containsKey("List")
+            is Set<*> -> this._collection.containsKey("Set")
+            is Map<*, *> -> this._collection.containsKey("Map")
+            is Collection<*> -> this._collection.containsKey("Collection")
+            is Array<*> -> this._collection.containsKey("Array")
+            else -> this._collection.containsKey(value::class.simpleName)
+        }
+    }
 
-	fun hasDatatypeInfo(value:Any) :Boolean {
-		return this._datatypes.containsKey(value::class.simpleName)
-	}
+    fun hasDatatypeInfo(value: Any): Boolean {
+        return this._datatypes.containsKey(value::class.simpleName)
+    }
 
-	fun findTypeDeclarationByName(name:String) : TypeDeclaration? {
-		return this._datatypes[name]
-			?: this._primitive[name]
-			?: this._enum[name]
-			?: this._collection[name]
-	}
-	fun findTypeDeclarationByClass(cls:KClass<*>) : TypeDeclaration? {
-		//TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
-		return this._datatypes[cls.simpleName]
-			?: this._primitive[cls.simpleName]
-			?: this._enum[cls.simpleName]
-			?: this._collection[cls.simpleName]
-	}
+    fun findTypeDeclarationByName(name: String): TypeDeclaration? {
+        return this._datatypes[name]
+            ?: this._primitive[name]
+            ?: this._enum[name]
+            ?: this._collection[name]
+    }
 
-	fun findAssignableDatatypeByName(cls:KClass<*>) : List<Datatype> {
-		TODO()
+    fun findTypeDeclarationByClass(cls: KClass<*>): TypeDeclaration? {
+        //TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
+        return this._datatypes[cls.simpleName]
+            ?: this._primitive[cls.simpleName]
+            ?: this._enum[cls.simpleName]
+            ?: this._collection[cls.simpleName]
+    }
 
-	}
-	fun findDatatypeByName(name:String) : Datatype? {
-		return this._datatypes[name]
-	}
-	fun findDatatypeByClass(cls:KClass<*>) : Datatype? {
-		//TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
-		return this._datatypes[cls.simpleName]
-	}
-	fun findCollectionTypeFor(value:Any) : CollectionType? {
-		//TODO: use qualified name when possible
-		return when(value) {
-			is List<*> -> this._collection["List"]
-			is Set<*> -> this._collection["Set"]
-			is Map<*,*> -> this._collection["Map"]
-			is Collection<*> -> this._collection["Collection"]
-			is Array<*> -> this._collection["Array"]
-			else -> this._collection[value::class.simpleName]
-		}
-	}
-	fun findPrimitiveByName(name:String) : PrimitiveType? {
-		return this._primitive[name]
-	}
-	fun findPrimitiveByClass(cls:KClass<*>) : PrimitiveType? {
-		//TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
-		return this._primitive[cls.simpleName]
-	}
-	fun findEnumByName(name:String) : EnumType? {
-		return this._enum[name]
-	}
-	fun findEnumByClass(cls:KClass<*>) : EnumType? {
-		//TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
-		return this._enum[cls.simpleName]
-	}
-	fun findPrimitiveMapperFor(cls:KClass<*>) : PrimitiveMapper<*,*>? {
-		return this._primitiveMappers[cls]
-	}
-	fun findPrimitiveMapperFor(clsName:String) : PrimitiveMapper<*,*>? {
-		return this._primitiveMappers.values.firstOrNull {
-			it.primitiveKlass.simpleName == clsName //FIXME: use qualified name when JS supports it!
-		}
-	}
-	fun findFirstByName(typeName: String): TypeDeclaration {
-		return this.namespaces.mapNotNull {
-			it.declaration[typeName]
-		}.firstOrNull() ?: throw KompositeException("TypeDeclaration $typeName not found in any namespace")
-	}
+    fun findAssignableDatatypeByName(cls: KClass<*>): List<Datatype> {
+        TODO()
 
-	override fun resolve(typeReference: TypeReference): TypeDeclaration {
-		val nsPath = typeReference.typePath.dropLast(1)
-		val typeName = typeReference.typePath.last()
-		return if (nsPath.isEmpty()) {
-			this.findFirstByName(typeName)
-		} else {
-			val ns = this.namespaces.firstOrNull { it.path == nsPath } ?: throw KompositeException("Namespace $nsPath not found")
-			ns.declaration[typeName] ?: throw KompositeException("TypeDeclaration $typeName not found in namespace $nsPath")
-		}
-	}
+    }
+
+    fun findDatatypeByName(name: String): Datatype? {
+        return this._datatypes[name]
+    }
+
+    fun findDatatypeByClass(cls: KClass<*>): Datatype? {
+        //TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
+        return this._datatypes[cls.simpleName]
+    }
+
+    fun findCollectionTypeFor(value: Any): CollectionType? {
+        //TODO: use qualified name when possible
+        return when (value) {
+            is List<*> -> this._collection["List"]
+            is Set<*> -> this._collection["Set"]
+            is Map<*, *> -> this._collection["Map"]
+            is Collection<*> -> this._collection["Collection"]
+            is Array<*> -> this._collection["Array"]
+            else -> this._collection[value::class.simpleName]
+        }
+    }
+
+    fun findPrimitiveByName(name: String): PrimitiveType? {
+        return this._primitive[name]
+    }
+
+    fun findPrimitiveByClass(cls: KClass<*>): PrimitiveType? {
+        //TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
+        return this._primitive[cls.simpleName]
+    }
+
+    fun findEnumByName(name: String): EnumType? {
+        return this._enum[name]
+    }
+
+    fun findEnumByClass(cls: KClass<*>): EnumType? {
+        //TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
+        return this._enum[cls.simpleName]
+    }
+
+    fun findPrimitiveMapperFor(cls: KClass<*>): PrimitiveMapper<*, *>? {
+        return this._primitiveMappers[cls]
+    }
+
+    fun findPrimitiveMapperFor(clsName: String): PrimitiveMapper<*, *>? {
+        return this._primitiveMappers.values.firstOrNull {
+            it.primitiveKlass.simpleName == clsName //FIXME: use qualified name when JS supports it!
+        }
+    }
+
+    fun findFirstByName(typeName: String): TypeDeclaration {
+        return this.namespaces.mapNotNull {
+            it.declaration[typeName]
+        }.firstOrNull() ?: throw KompositeException("TypeDeclaration $typeName not found in any namespace")
+    }
+
+    override fun resolve(typeReference: TypeReference): TypeDeclaration {
+        val nsPath = typeReference.typePath.dropLast(1)
+        val typeName = typeReference.typePath.last()
+        return if (nsPath.isEmpty()) {
+            this.findFirstByName(typeName)
+        } else {
+            val ns = this.namespaces.firstOrNull { it.path == nsPath } ?: throw KompositeException("Namespace $nsPath not found")
+            ns.declaration[typeName] ?: throw KompositeException("TypeDeclaration $typeName not found in namespace $nsPath")
+        }
+    }
 }
