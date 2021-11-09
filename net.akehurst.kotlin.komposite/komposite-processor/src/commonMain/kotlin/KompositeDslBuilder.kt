@@ -88,13 +88,13 @@ class KompositeDatatypeBuilder(
     private val datatype = DatatypeSimple(namespace, name)
 
     fun constructorArguments(init: KompositePropertySetBuilder.() -> Unit) {
-        val b = KompositePropertySetBuilder(datatype)
+        val b = KompositePropertySetBuilder(datatype, true)
         b.init()
         b.build()
     }
 
     fun mutableProperties(init: KompositePropertySetBuilder.() -> Unit) {
-        val b = KompositePropertySetBuilder(datatype)
+        val b = KompositePropertySetBuilder(datatype, false)
         b.init()
         b.build()
     }
@@ -107,7 +107,8 @@ class KompositeDatatypeBuilder(
 
 @KompositeDslMarker
 class KompositePropertySetBuilder(
-    private val datatype: DatatypeSimple
+    private val datatype: DatatypeSimple,
+    private val isConstructorArgs:Boolean
 ) {
     private val props = mutableSetOf<DatatypeProperty>()
     fun composite(name: String, qualifiedTypeName: String, nullable:Boolean=false, typeArguments: KompositeTypeArgumentBuilder.() -> Unit={}): DatatypeProperty {
@@ -118,6 +119,8 @@ class KompositePropertySetBuilder(
         val typeReference = TypeReferenceSimple({ tref -> datatype.namespace.model.resolve(tref) }, typePath, typeArgs)
         val prop = DatatypePropertySimple(datatype, name, typeReference)
         prop.isComposite = true
+        if (isConstructorArgs) prop.setIdentityIndex(props.size)
+        props.add(prop)
         return prop
     }
 
@@ -129,6 +132,8 @@ class KompositePropertySetBuilder(
         val typeReference = TypeReferenceSimple({ tref -> datatype.namespace.model.resolve(tref) }, typePath, typeArgs)
         val prop = DatatypePropertySimple(datatype, name, typeReference)
         prop.isReference = true
+        if (isConstructorArgs) prop.setIdentityIndex(props.size)
+        props.add(prop)
         return prop
     }
 
