@@ -46,8 +46,7 @@ class KompositeNamespaceBuilder(
     private val model: DatatypeModelSimple,
     private val qualifiedName: String
 ) {
-    private val path = qualifiedName.split(".").toList()
-    private val namespace = NamespaceSimple(model, path)
+    private val namespace = NamespaceSimple(model, qualifiedName)
 
     fun enumType(name: String): EnumType {
         val et = EnumTypeSimple(namespace, name)

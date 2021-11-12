@@ -85,7 +85,8 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
     private fun namespace(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): Namespace {
         val model = arg as DatatypeModel
         val path = this.transformBranch<List<String>>(children[0], arg)
-        val result = NamespaceSimple(model, path)
+        val qn = path.joinToString(separator = ".")
+        val result = NamespaceSimple(model, qn)
         children[1].branchNonSkipChildren.forEach {
             val dt = this.transformBranch<TypeDeclaration>(it, result)
             result.addDeclaration(dt)

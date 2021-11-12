@@ -27,10 +27,10 @@ class DatatypeModelSimple : DatatypeModel {
         //TODO: 'close' this set of instances
         fun ANY_TYPE_REF(resolver: (TypeReference) -> TypeDeclaration) = TypeReferenceSimple(resolver, listOf("kotlin", "Any"), emptyList())
 
-        fun ARRAY_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "Array", listOf("E"))
-        fun LIST_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "List", listOf("E"))
-        fun SET_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "Set", listOf("E"))
-        fun MAP_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, listOf("kotlin", "collections")), "Map", listOf("K", "V"))
+        fun ARRAY_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "Array", listOf("E"))
+        fun LIST_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "List", listOf("E"))
+        fun SET_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "Set", listOf("E"))
+        fun MAP_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "Map", listOf("K", "V"))
     }
 
     private val _namespaces = mutableListOf<Namespace>()
@@ -61,18 +61,19 @@ class DatatypeModelSimple : DatatypeModel {
 
 class NamespaceSimple(
     override var model: DatatypeModel,
-    override val path: List<String>
+    override val qualifiedName: String
 ) : Namespace {
 
     private val _declaration = mutableMapOf<String, TypeDeclaration>()
 
+    override val path: List<String> by lazy { qualifiedName.split(".").toList() }
     override val declaration: Map<String, TypeDeclaration> = _declaration
 
     fun addDeclaration(value: TypeDeclaration) {
         this._declaration[value.name] = value
     }
 
-    override fun qualifiedName(separator: String): String {
+    override fun qualifiedNameBy(separator: String): String {
         return this.path.joinToString(separator)
     }
 
@@ -99,8 +100,9 @@ data class PrimitiveTypeSimple(
     override val isPrimitive: Boolean = true
     override val isEnum: Boolean = false
     override val isCollection: Boolean = false
-    override fun qualifiedName(separator: String): String {
-        return this.namespace.qualifiedName(separator) + separator + this.name
+    override val qualifiedName: String = "${namespace.qualifiedName}.$name"
+    override fun qualifiedNameBy(separator: String): String {
+        return this.namespace.qualifiedNameBy(separator) + separator + this.name
     }
 }
 
@@ -111,12 +113,12 @@ data class EnumTypeSimple(
     override val isPrimitive: Boolean = false
     override val isEnum: Boolean = true
     override val isCollection: Boolean = false
-    override fun qualifiedName(separator: String): String {
-        return this.namespace.qualifiedName(separator) + separator + this.name
+    override val qualifiedName: String = "${namespace.qualifiedName}.$name"
+    override fun qualifiedNameBy(separator: String): String {
+        return this.namespace.qualifiedNameBy(separator) + separator + this.name
     }
 
-    override val clazz: KClass<Enum<*>>
-        get() = KotlinxReflect.classForName(this.qualifiedName(".")) as KClass<Enum<*>>
+    override val clazz: KClass<Enum<*>> by lazy { KotlinxReflect.classForName(qualifiedName) as KClass<Enum<*>> }
 }
 
 data class CollectionTypeSimple(
@@ -124,7 +126,6 @@ data class CollectionTypeSimple(
     override val name: String,
     override val parameters: List<String>
 ) : CollectionType {
-
     override val isPrimitive: Boolean = false
     override val isEnum: Boolean = false
     override val isCollection: Boolean = true
@@ -132,9 +133,9 @@ data class CollectionTypeSimple(
     override val isList get() = this == DatatypeModelSimple.LIST_TYPE(this.namespace.model)
     override val isSet get() = this == DatatypeModelSimple.SET_TYPE(this.namespace.model)
     override val isMap get() = this == DatatypeModelSimple.MAP_TYPE(this.namespace.model)
-
-    override fun qualifiedName(separator: String): String {
-        return this.namespace.qualifiedName(separator) + separator + this.name
+    override val qualifiedName: String = "${namespace.qualifiedName}.$name"
+    override fun qualifiedNameBy(separator: String): String {
+        return this.namespace.qualifiedNameBy(separator) + separator + this.name
     }
 }
 
@@ -149,9 +150,9 @@ data class DatatypeSimple(
     override val isPrimitive: Boolean = false
     override val isEnum: Boolean = false
     override val isCollection: Boolean = false
+    override val qualifiedName: String = "${namespace.qualifiedName}.$name"
 
-    override val clazz: KClass<*>
-        get() = KotlinxReflect.classForName(this.qualifiedName("."))
+    override val clazz: KClass<*> by lazy { KotlinxReflect.classForName(qualifiedName) }
 
     override val superTypes: List<TypeReference> = _superTypes
 
@@ -224,8 +225,8 @@ data class DatatypeSimple(
         _property[value.name] = value
     }
 
-    override fun qualifiedName(separator: String): String {
-        return this.namespace.qualifiedName(separator) + separator + this.name
+    override fun qualifiedNameBy(separator: String): String {
+        return this.namespace.qualifiedNameBy(separator) + separator + this.name
     }
 
     override fun objectNonIdentityProperties(obj: Any): Set<DatatypeProperty> {

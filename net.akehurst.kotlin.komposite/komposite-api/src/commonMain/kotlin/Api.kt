@@ -30,19 +30,21 @@ interface DatatypeModel {
 
 interface Namespace {
     var model: DatatypeModel
+    val qualifiedName:String
     val path: List<String>
     val declaration: Map<String, TypeDeclaration>
-    fun qualifiedName(separator: String): String
+    fun qualifiedNameBy(separator: String): String
 }
 
 interface TypeDeclaration {
     val namespace: Namespace
     val name: String
+    val qualifiedName:String
     val isPrimitive : Boolean
     val isEnum: Boolean
     val isCollection : Boolean
 
-    fun qualifiedName(separator: String): String
+    fun qualifiedNameBy(separator: String): String
 }
 
 interface PrimitiveType : TypeDeclaration {
