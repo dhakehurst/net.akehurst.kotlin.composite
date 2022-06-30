@@ -31,7 +31,7 @@ object Komposite {
                 grammarDefinitionStr = grammarStr,
                 syntaxAnalyser = KompositeSyntaxAnalyser(),
                 formatter = Formatter()
-            )
+            ).buildFor("model")
         }
         return _processor!!
     }
@@ -73,8 +73,6 @@ object Komposite {
             }
             
             """.trimIndent()
-
-
     }
 
     fun process(datatypeModel: String): DatatypeModel {

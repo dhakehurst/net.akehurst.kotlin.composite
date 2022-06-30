@@ -20,6 +20,7 @@ import net.akehurst.kotlin.komposite.api.*
 import net.akehurst.language.agl.syntaxAnalyser.BranchHandler
 import net.akehurst.language.agl.syntaxAnalyser.SyntaxAnalyserAbstract
 import net.akehurst.language.api.analyser.SyntaxAnalyser
+import net.akehurst.language.api.grammar.RuleItem
 import net.akehurst.language.api.parser.InputLocation
 import net.akehurst.language.api.processor.LanguageIssue
 import net.akehurst.language.api.processor.SentenceContext
@@ -45,9 +46,8 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
         return emptyList()
     }
 
-    override fun transform(sppt: SharedPackedParseTree, context: Any?): Pair<DatatypeModel, List<LanguageIssue>> {
+    override fun transform(sppt: SharedPackedParseTree, mapToGrammar: (Int, Int) -> RuleItem, context: Any?): Pair<DatatypeModel, List<LanguageIssue>> {
         val asm = this.transformBranch<DatatypeModel>(sppt.root.asBranch, "")
-
         return Pair(asm,issues)
     }
 
