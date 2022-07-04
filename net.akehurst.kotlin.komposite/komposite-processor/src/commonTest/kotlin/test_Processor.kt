@@ -26,11 +26,6 @@ class test_Processor() {
 
     companion object {
         var processor: LanguageProcessor = Komposite.processor()
-    }
-
-
-    @Test
-    fun test() {
         val komposite = """
             namespace kotlin.collections {
                 collection List<E>
@@ -57,8 +52,21 @@ class test_Processor() {
             
             }
         """.trimIndent()
-        val result: DatatypeModel = processor.process<DatatypeModel,Any>( komposite,"model").first!!
-        assertNotNull(result)
+    }
+
+    @Test
+    fun parse() {
+
+        val (sppt,issues) = processor.parse( komposite,"model")
+        assertNotNull(sppt,issues.joinToString(separator = "\n"){"$it"})
+        //val resultStr = result.asString
+        //assertEquals(original, resultStr)
+    }
+
+    @Test
+    fun process() {
+        val (result,issues) = processor.process<DatatypeModel,Any>( komposite,"model")
+        assertNotNull(result,issues.joinToString(separator = "\n"){"$it"})
         //val resultStr = result.asString
         //assertEquals(original, resultStr)
     }

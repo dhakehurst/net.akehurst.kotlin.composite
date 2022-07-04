@@ -19,6 +19,7 @@ package net.akehurst.kotlin.komposite.common
 import net.akehurst.kotlinx.reflect.reflect
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.fail
 
 class test_KClass {
 
@@ -30,8 +31,9 @@ class test_KClass {
 
     @Test
     fun qualifiedName() {
-        val actual = test_KClass::class.qualifiedName
-        assertEquals("net.akehurst.kotlin.komposite.common.test_KClass",actual)
+        fail("qualifiedName Unsupported in JS")
+        //val actual = test_KClass::class.qualifiedName
+        //assertEquals("net.akehurst.kotlin.komposite.common.test_KClass",actual)
     }
 
     @Test

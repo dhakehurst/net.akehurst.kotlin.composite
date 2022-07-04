@@ -75,8 +75,6 @@ object Komposite {
             """.trimIndent()
     }
 
-    fun process(datatypeModel: String): DatatypeModel {
-        //TODO: handle issues
-        return this.processor().process<DatatypeModel, Any>(datatypeModel, "model").first!!
-    }
+    fun process(datatypeModel: String) = this.processor().process<DatatypeModel, Any>(datatypeModel, "model")
+
 }

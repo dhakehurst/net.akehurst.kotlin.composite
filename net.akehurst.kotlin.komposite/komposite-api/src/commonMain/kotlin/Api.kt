@@ -18,9 +18,9 @@ package net.akehurst.kotlin.komposite.api
 
 import kotlin.reflect.KClass
 
-class KompositeException : RuntimeException {
-    constructor(message: String) : super(message)
-    constructor(message: String, cause: Throwable) : super(message, cause)
+class KompositeException(message:String,val issues:List<*>,cause:Throwable?) : RuntimeException(message,cause) {
+    constructor(message: String) : this(message, emptyList<Any>(),null)
+    constructor(message: String, cause: Throwable) : this(message, emptyList<Any>(),cause)
 }
 
 interface DatatypeModel {
