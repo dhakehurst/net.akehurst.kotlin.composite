@@ -10,6 +10,7 @@ dependencies {
 
     "commonMainApi"(project(":komposite-api"))
     "commonMainImplementation"(project(":komposite-processor"))
+    "commonMainImplementation"("net.akehurst.language:agl-processor:${version_agl}")
     "commonMainImplementation"("net.akehurst.kotlinx:kotlinx-reflect:$version_kotlinx")
     "commonMainImplementation"("net.akehurst.kotlinx:kotlinx-collections:$version_kotlinx")
 

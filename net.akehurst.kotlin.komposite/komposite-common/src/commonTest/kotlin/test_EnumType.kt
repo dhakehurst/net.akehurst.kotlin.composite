@@ -16,6 +16,7 @@
 
 package net.akehurst.kotlin.komposite.common
 
+import net.akehurst.kotlinx.reflect.EnumValuesFunction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import net.akehurst.kotlinx.reflect.KotlinxReflect
@@ -28,7 +29,7 @@ class test_EnumType {
 
     @Test
     fun valueOfString() {
-        KotlinxReflect.registerClass("net.akehurst.kotlin.komposite.common.EEEE",EEEE::class)
+        KotlinxReflect.registerClass("net.akehurst.kotlin.komposite.common.EEEE",EEEE::class,EEEE::values as EnumValuesFunction)
 
         val komposite = """
         namespace net.akehurst.kotlin.komposite.common {

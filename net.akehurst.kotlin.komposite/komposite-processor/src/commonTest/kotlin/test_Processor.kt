@@ -16,8 +16,6 @@
 
 package net.akehurst.kotlin.komposite.processor
 
-import net.akehurst.kotlin.komposite.api.DatatypeModel
-import net.akehurst.language.api.processor.LanguageProcessor
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 
@@ -25,7 +23,7 @@ import kotlin.test.assertNotNull
 class test_Processor() {
 
     companion object {
-        var processor: LanguageProcessor = Komposite.processor()
+        var processor = Komposite.processor()
         val komposite = """
             namespace kotlin.collections {
                 collection List<E>
@@ -57,16 +55,16 @@ class test_Processor() {
     @Test
     fun parse() {
 
-        val (sppt,issues) = processor.parse( komposite,"model")
-        assertNotNull(sppt,issues.joinToString(separator = "\n"){"$it"})
+        val result = processor.parse( komposite)
+        assertNotNull(result.sppt,result.issues.joinToString(separator = "\n"){"$it"})
         //val resultStr = result.asString
         //assertEquals(original, resultStr)
     }
 
     @Test
     fun process() {
-        val (result,issues) = processor.process<DatatypeModel,Any>( komposite,"model")
-        assertNotNull(result,issues.joinToString(separator = "\n"){"$it"})
+        val result = processor.process( komposite)
+        assertNotNull(result.asm,result.issues.joinToString(separator = "\n"){"$it"})
         //val resultStr = result.asString
         //assertEquals(original, resultStr)
     }

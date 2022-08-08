@@ -59,6 +59,6 @@ fun DatatypeProperty.set(obj: Any, value: Any?) {
     }
 }
 
-fun <E : Enum<E>> EnumType.valueOf(name: String): Enum<E> {
-    return this.clazz.reflect().enumValueOf(name)
+fun <E : Enum<E>> EnumType.valueOf(name: String): Enum<E>? {
+    return this.clazz.reflect().enumValueOf<E>(name)
 }

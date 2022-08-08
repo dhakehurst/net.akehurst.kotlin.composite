@@ -1,6 +1,4 @@
 plugins {
-    //id("net.akehurst.kotlin.gradle.plugin.exportPublic") version("1.3.0")
-    //id("net.akehurst.kotlinx.kotlinx-reflect-gradle-plugin") version ("1.4.1")
 }
 
 

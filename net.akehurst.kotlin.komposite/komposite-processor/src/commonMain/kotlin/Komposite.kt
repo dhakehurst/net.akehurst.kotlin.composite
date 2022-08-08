@@ -22,16 +22,21 @@ import net.akehurst.language.api.processor.LanguageProcessor
 
 object Komposite {
 
-    private var _processor: LanguageProcessor? = null
+    private var _processor: LanguageProcessor<DatatypeModel,Any>? = null
 
-    internal fun processor(): LanguageProcessor {
+    internal fun processor(): LanguageProcessor<DatatypeModel,Any> {
         if (null == _processor) {
             val grammarStr = fetchGrammarStr()
-            _processor = Agl.processorFromString(
+            val proc = Agl.processorFromString<DatatypeModel,Any>(
                 grammarDefinitionStr = grammarStr,
-                syntaxAnalyser = KompositeSyntaxAnalyser(),
-                formatter = Formatter()
-            ).buildFor("model")
+                configuration = Agl.configuration {
+                    defaultGoalRuleName("model")
+                    syntaxAnalyserResolver { KompositeSyntaxAnalyser() }
+                    formatter(Formatter())
+                }
+            )
+            //proc.buildFor() //build for default goal, see above
+            _processor = proc
         }
         return _processor!!
     }
@@ -75,6 +80,6 @@ object Komposite {
             """.trimIndent()
     }
 
-    fun process(datatypeModel: String) = this.processor().process<DatatypeModel, Any>(datatypeModel, "model")
+    fun process(datatypeModel: String) = this.processor().process(datatypeModel)
 
 }

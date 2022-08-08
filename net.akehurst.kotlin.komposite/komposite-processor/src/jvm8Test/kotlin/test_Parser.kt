@@ -35,7 +35,7 @@ class test_Parser(val data: Data) {
     }
 
     companion object {
-        var processor: LanguageProcessor = Komposite.processor()
+        var processor = Komposite.processor()
 
         val sourceFiles = listOf(
             "testFiles/empty.komposite",
@@ -53,7 +53,7 @@ class test_Parser(val data: Data) {
         fun data(): Collection<Data> {
             val col = ArrayList<Data>()
             for (sourceFile in sourceFiles) {
-                var fileContent = ClassLoader.getSystemClassLoader().getResourceAsStream(sourceFile).reader().readText()
+                val fileContent = ClassLoader.getSystemClassLoader().getResourceAsStream(sourceFile).reader().readText()
                 col.add(Data(sourceFile, fileContent))
             }
             return col
@@ -63,8 +63,8 @@ class test_Parser(val data: Data) {
 
     @Test
     fun test() {
-        val (sppt, issues) = processor.parse(this.data.fileContent, "model")
-        assertNotNull(sppt)
+        val result = processor.parse(this.data.fileContent)
+        assertNotNull(result.sppt,result.issues.joinToString(separator = "\n"){"$it"})
         //val resultStr = result.asString
         //assertEquals(original, resultStr)
     }

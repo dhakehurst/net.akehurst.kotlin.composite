@@ -102,11 +102,11 @@ class DatatypeRegistry : DatatypeModel {
 
     fun registerFromConfigString(kompositeModel: String, primitiveMappers: Map<KClass<*>, PrimitiveMapper<*, *>>) {
         try {
-            val (mdl, issues) = Komposite.process(kompositeModel)
-            if (null == mdl) {
-                throw KompositeException("Error processing config string", issues, null)
+            val result = Komposite.process(kompositeModel)
+            if (null == result.asm) {
+                throw KompositeException("Error processing config string", result.issues, null)
             } else {
-                this.registerFromKompositeModel(mdl, primitiveMappers)
+                this.registerFromKompositeModel(result.asm!!, primitiveMappers)
             }
         } catch (e: Exception) {
             throw KompositeException("Error trying to register datatypes from config string - ${e.message}", e)
