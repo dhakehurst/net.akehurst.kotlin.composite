@@ -27,7 +27,9 @@ class test_KompositeDslBuilder {
             namespace("test.namespace") {
                 enumType("TestEnum")
                 primitiveType("TestPrimitive")
+                dataType("TestDataTypeAbstract") {}
                 dataType("TestDataType") {
+                    superTypes("TestDataTypeAbstract")
                     constructorArguments {
                         reference("refArgProp", "SomeType")
                         composite("cmpArgProp", "SomeType")
@@ -50,6 +52,6 @@ class test_KompositeDslBuilder {
         }
 
         assertEquals(listOf("test","namespace"),actual.namespaces[0].path)
-
+//TODO: better test checks
     }
 }

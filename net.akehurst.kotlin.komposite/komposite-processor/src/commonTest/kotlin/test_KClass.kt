@@ -16,6 +16,7 @@
 
 package net.akehurst.kotlin.komposite.common
 
+import net.akehurst.kotlinx.reflect.KotlinxReflect
 import net.akehurst.kotlinx.reflect.reflect
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,6 +39,7 @@ class test_KClass {
 
     @Test
     fun qualifiedName2() {
+        KotlinxReflect.registerClass("net.akehurst.kotlin.komposite.common.test_KClass",test_KClass::class)
         val actual = test_KClass::class.reflect().qualifiedName
         assertEquals("net.akehurst.kotlin.komposite.common.test_KClass",actual)
     }

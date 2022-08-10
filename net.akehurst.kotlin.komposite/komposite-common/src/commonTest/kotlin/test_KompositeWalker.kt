@@ -16,15 +16,16 @@
 
 package net.akehurst.kotlin.komposite.common
 
+import kotlin.js.JsExport
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@JsExport
+data class A (
+    val prop1:String = "hello"
+)
 
 class test_KompositeWalker {
-
-    data class A (
-        val prop1:String = "hello"
-    )
 
     @Test
     fun walk_null() {

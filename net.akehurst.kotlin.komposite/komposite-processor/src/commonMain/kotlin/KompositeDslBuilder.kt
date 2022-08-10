@@ -86,6 +86,14 @@ class KompositeDatatypeBuilder(
 
     private val datatype = DatatypeSimple(namespace, name)
 
+    fun superTypes(vararg typeNames:String) {
+        typeNames.forEach {
+            val typePath = it.split(".").toList()
+            val superTypeRef = TypeReferenceSimple({ tref -> datatype.namespace.model.resolve(tref) }, typePath, emptyList())
+            datatype.addSuperType(superTypeRef)
+        }
+    }
+
     fun constructorArguments(init: KompositePropertySetBuilder.() -> Unit) {
         val b = KompositePropertySetBuilder(datatype, true)
         b.init()
