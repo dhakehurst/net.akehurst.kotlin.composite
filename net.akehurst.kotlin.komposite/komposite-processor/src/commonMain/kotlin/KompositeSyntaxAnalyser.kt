@@ -17,13 +17,18 @@
 package net.akehurst.kotlin.komposite.processor
 
 import net.akehurst.kotlin.komposite.api.*
+import net.akehurst.language.agl.processor.IssueHolder
+import net.akehurst.language.agl.processor.SyntaxAnalysisResultDefault
 import net.akehurst.language.agl.syntaxAnalyser.BranchHandler
 import net.akehurst.language.agl.syntaxAnalyser.SyntaxAnalyserAbstract
 import net.akehurst.language.api.analyser.SyntaxAnalyser
+import net.akehurst.language.api.grammar.GrammarItem
 import net.akehurst.language.api.grammar.RuleItem
 import net.akehurst.language.api.parser.InputLocation
 import net.akehurst.language.api.processor.LanguageIssue
+import net.akehurst.language.api.processor.LanguageProcessorPhase
 import net.akehurst.language.api.processor.SentenceContext
+import net.akehurst.language.api.processor.SyntaxAnalysisResult
 import net.akehurst.language.api.sppt.SPPTBranch
 import net.akehurst.language.api.sppt.SharedPackedParseTree
 
@@ -34,7 +39,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
         constructor(message: String) : super(message)
     }
 
-    private val issues= mutableListOf<LanguageIssue>()
+    private val issues= IssueHolder(LanguageProcessorPhase.SYNTAX_ANALYSIS)
 
     override val locationMap: Map<Any, InputLocation> = mutableMapOf()
 
@@ -42,13 +47,13 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
 
     }
 
-    override fun configure(configurationContext: SentenceContext, configuration: String): List<LanguageIssue> {
+    override fun configure(configurationContext: SentenceContext<GrammarItem>, configuration: Map<String, Any>): List<LanguageIssue> {
         return emptyList()
     }
 
-    override fun transform(sppt: SharedPackedParseTree, mapToGrammar: (Int, Int) -> RuleItem, context: Any?): Pair<DatatypeModel, List<LanguageIssue>> {
+    override fun transform(sppt: SharedPackedParseTree, mapToGrammar: (Int, Int) -> RuleItem, context: Any?): SyntaxAnalysisResult<DatatypeModel> {
         val asm = this.transformBranch<DatatypeModel>(sppt.root.asBranch, "")
-        return Pair(asm,issues)
+        return SyntaxAnalysisResultDefault(asm,issues,locationMap)
     }
 
     private fun <T:Any> transformBranch(branch:SPPTBranch, arg: Any):T {
@@ -73,7 +78,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
     private fun transformModel(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): DatatypeModel {
         val result = DatatypeModelSimple()
 
-        val namespaces = children.forEach {
+        val namespaces = children[0].branchNonSkipChildren.forEach {
             val ns = this.transformBranch<Namespace>(it, result)
             result.addNamespace(ns)
         }
@@ -200,8 +205,8 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
         } else {
             this.transformBranch(typeArgumentList.branchNonSkipChildren[0], arg)
         }
-        val dt = arg as Datatype
-        return TypeReferenceSimple({ tref->dt.namespace.model.resolve(tref)}, typePath, typeArgs)
+        val dt = arg as DatatypeSimple
+        return TypeReferenceSimple(dt.resolver, typePath, typeArgs)
     }
 
     //typeArgumentList = '<' [ typeReference / ',']+ '>' ;

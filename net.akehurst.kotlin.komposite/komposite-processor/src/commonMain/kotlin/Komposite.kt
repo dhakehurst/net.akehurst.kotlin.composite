@@ -18,7 +18,10 @@ package net.akehurst.kotlin.komposite.processor
 
 import net.akehurst.kotlin.komposite.api.DatatypeModel
 import net.akehurst.language.agl.processor.Agl
+import net.akehurst.language.agl.processor.IssueHolder
+import net.akehurst.language.agl.processor.ProcessResultDefault
 import net.akehurst.language.api.processor.LanguageProcessor
+import net.akehurst.language.api.processor.LanguageProcessorPhase
 
 object Komposite {
 
@@ -27,16 +30,17 @@ object Komposite {
     internal fun processor(): LanguageProcessor<DatatypeModel,Any> {
         if (null == _processor) {
             val grammarStr = fetchGrammarStr()
-            val proc = Agl.processorFromString<DatatypeModel,Any>(
+            val res = Agl.processorFromString<DatatypeModel,Any>(
                 grammarDefinitionStr = grammarStr,
                 configuration = Agl.configuration {
                     defaultGoalRuleName("model")
-                    syntaxAnalyserResolver { KompositeSyntaxAnalyser() }
-                    formatter(Formatter())
+                    syntaxAnalyserResolver { ProcessResultDefault(KompositeSyntaxAnalyser(),IssueHolder(LanguageProcessorPhase.ALL)) }
+                    semanticAnalyserResolver { ProcessResultDefault(KompositeSemanticAnalyser(),IssueHolder(LanguageProcessorPhase.ALL)) }
+                //formatter(Formatter())
                 }
             )
             //proc.buildFor() //build for default goal, see above
-            _processor = proc
+            _processor = res.processor
         }
         return _processor!!
     }

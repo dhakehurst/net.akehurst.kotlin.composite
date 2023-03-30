@@ -89,8 +89,14 @@ class KompositeDatatypeBuilder(
     fun superTypes(vararg typeNames:String) {
         typeNames.forEach {
             val typePath = it.split(".").toList()
-            val superTypeRef = TypeReferenceSimple({ tref -> datatype.namespace.model.resolve(tref) }, typePath, emptyList())
+            val superTypeRef = TypeReferenceSimple(datatype.resolver, typePath, emptyList())
             datatype.addSuperType(superTypeRef)
+        }
+    }
+
+    fun typeParameters(vararg names:String) {
+        names.forEach {
+            datatype.addTypeParameter(it)
         }
     }
 
@@ -120,10 +126,10 @@ class KompositePropertySetBuilder(
     private val props = mutableSetOf<DatatypeProperty>()
     fun composite(name: String, qualifiedTypeName: String, nullable:Boolean=false, typeArguments: KompositeTypeArgumentBuilder.() -> Unit={}): DatatypeProperty {
         val typePath = qualifiedTypeName.split(".").toList()
-        val tab = KompositeTypeArgumentBuilder(datatype.namespace.model)
+        val tab = KompositeTypeArgumentBuilder(datatype)
         tab.typeArguments()
         val typeArgs = tab.build()
-        val typeReference = TypeReferenceSimple({ tref -> datatype.namespace.model.resolve(tref) }, typePath, typeArgs)
+        val typeReference = TypeReferenceSimple(datatype.resolver, typePath, typeArgs)
         val prop = DatatypePropertySimple(datatype, name, typeReference)
         prop.isComposite = true
         if (isConstructorArgs) prop.setIdentityIndex(props.size)
@@ -133,10 +139,10 @@ class KompositePropertySetBuilder(
 
     fun reference(name: String, qualifiedTypeName: String, nullable:Boolean=false, typeArguments: KompositeTypeArgumentBuilder.() -> Unit={}): DatatypeProperty {
         val typePath = qualifiedTypeName.split(".").toList()
-        val tab = KompositeTypeArgumentBuilder(datatype.namespace.model)
+        val tab = KompositeTypeArgumentBuilder(datatype)
         tab.typeArguments()
         val typeArgs = tab.build()
-        val typeReference = TypeReferenceSimple({ tref -> datatype.namespace.model.resolve(tref) }, typePath, typeArgs)
+        val typeReference = TypeReferenceSimple(datatype.resolver, typePath, typeArgs)
         val prop = DatatypePropertySimple(datatype, name, typeReference)
         prop.isReference = true
         if (isConstructorArgs) prop.setIdentityIndex(props.size)
@@ -152,15 +158,15 @@ class KompositePropertySetBuilder(
 
 @KompositeDslMarker
 class KompositeTypeArgumentBuilder(
-    private val model: DatatypeModel
+    private val datatype: DatatypeSimple
 ) {
     private val list = mutableListOf<TypeReference>()
     fun typeArgument(qualifiedTypeName:String,typeArguments: KompositeTypeArgumentBuilder.() -> Unit={}) : TypeReference {
         val typePath = qualifiedTypeName.split(".").toList()
-        val tab = KompositeTypeArgumentBuilder(model)
+        val tab = KompositeTypeArgumentBuilder(datatype)
         tab.typeArguments()
         val typeArgs = tab.build()
-        val tref = TypeReferenceSimple({model.resolve(it)},typePath, typeArgs)
+        val tref = TypeReferenceSimple(datatype.resolver,typePath, typeArgs)
         list.add(tref)
         return tref
     }

@@ -36,11 +36,40 @@ fun DatatypeProperty.get(obj: Any): Any? {
     val reflect = obj.reflect()
     return reflect.getProperty(this.name)
 }
-
+/*
 fun DatatypeProperty.set(obj: Any, value: Any?) {
     try {
         val reflect = obj.reflect()
+
         if (reflect.isPropertyMutable(this.name)) {
+            try {
+                reflect.setProperty(this.name, value)
+                return
+            } catch (_: Throwable) {
+
+            }
+        }
+
+        val existingValue = reflect.getProperty(this.name)
+        if (existingValue is MutableCollection<*> && value is Collection<*>) {
+            existingValue.clear()
+            (existingValue as MutableCollection<Any>).addAll(value as Collection<Any>)
+        } else if (existingValue is MutableMap<*, *> && value is Map<*, *>) {
+            existingValue.clear()
+            (existingValue as MutableMap<Any, Any>).putAll(value as Map<Any, Any>)
+        } else {
+            error("Cannot set property ${this.datatype.name}.${this.name} to ${value} because it is not a mutable property or Mutable collection")
+        }
+
+    } catch (t: Throwable) {
+        throw KompositeException("Unable to set property ${this.datatype.name}.${this.name} to ${value} due to ${t.message ?: "Unknown"}")
+    }
+}
+*/
+fun DatatypeProperty.set(obj: Any, value: Any?) {
+    try{
+        val reflect = obj.reflect()
+        if (this.isMutable) {
             reflect.setProperty(this.name, value)
         } else {
             val existingValue = reflect.getProperty(this.name)
@@ -51,11 +80,12 @@ fun DatatypeProperty.set(obj: Any, value: Any?) {
                 existingValue.clear()
                 (existingValue as MutableMap<Any, Any>).putAll(value as Map<Any, Any>)
             } else {
-                error("Cannot set property ${this.name}.${this.name} to ${value} because it is not a mutable property or Mutable collection")
+                error("Cannot set property ${this.datatype.name}.${this.name} to ${value} because it is not a mutable property or Mutable collection")
             }
         }
+
     } catch (t: Throwable) {
-        throw KompositeException("Unable to set property ${this.name}.${this.name} to ${value} due to ${t.message ?: "Unknown"}")
+        throw KompositeException("Unable to set property ${this.datatype.name}.${this.name} to ${value} due to ${t.message ?: "Unknown"}")
     }
 }
 

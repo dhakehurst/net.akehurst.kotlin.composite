@@ -21,11 +21,13 @@ import net.akehurst.kotlinx.reflect.KotlinxReflect
 import net.akehurst.kotlinx.reflect.reflect
 import kotlin.reflect.KClass
 
+typealias TypeResolver = (TypeReference) -> TypeDeclaration
+
 class DatatypeModelSimple : DatatypeModel {
 
     companion object {
         //TODO: 'close' this set of instances
-        fun ANY_TYPE_REF(resolver: (TypeReference) -> TypeDeclaration) = TypeReferenceSimple(resolver, listOf("kotlin", "Any"), emptyList())
+        fun ANY_TYPE_REF(resolver: TypeResolver) = TypeReferenceSimple(resolver, listOf("kotlin", "Any"), emptyList())
 
         fun ARRAY_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "Array", listOf("E"))
         fun LIST_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "List", listOf("E"))
@@ -139,13 +141,26 @@ data class CollectionTypeSimple(
     }
 }
 
+//data class TypeParameter(
+//    val name: String
+//)
+
 data class DatatypeSimple(
     override val namespace: Namespace,
     override val name: String
 ) : Datatype {
 
+    private val _typeParameters = mutableListOf<String>()
     private val _superTypes = mutableListOf<TypeReference>()
     private val _property = mutableMapOf<String, DatatypeProperty>()
+
+    internal val resolver:TypeResolver = { tref ->
+        if (1==tref.typePath.size && _typeParameters.contains(tref.typePath[0])) {
+            DatatypeModelSimple.ANY_TYPE_REF(this.namespace.model::resolve).type.declaration
+        } else {
+            this.namespace.model.resolve(tref)
+        }
+    }
 
     override val isPrimitive: Boolean = false
     override val isEnum: Boolean = false
@@ -221,6 +236,10 @@ data class DatatypeSimple(
         _superTypes += value
     }
 
+    fun addTypeParameter(value:String) {
+        this._typeParameters.add(value)
+    }
+
     fun addProperty(value: DatatypeProperty) {
         _property[value.name] = value
     }
@@ -265,10 +284,7 @@ data class DatatypePropertySimple(
     private var _isComposite = false
     private var _identityIndex = -1
 
-    override val propertyType: TypeInstance
-        get() {
-            return typeReference.type
-        }
+    override val propertyType: TypeInstance get() = typeReference.type
     override val isIdentity: Boolean get() = -1 != _identityIndex
     override val identityIndex: Int get() = _identityIndex
 
@@ -283,7 +299,7 @@ data class DatatypePropertySimple(
             this._isComposite = value.not()
         }
 
-    override val isMutable: Boolean get() = this.datatype.clazz.reflect().isPropertyMutable(this.name)
+    override val isMutable: Boolean get() = isIdentity.not() && propertyType.declaration.isCollection.not() //get() = this.datatype.clazz.reflect().isPropertyMutable(this.name)
 
     override var ignore: Boolean = false
 
@@ -295,7 +311,7 @@ data class DatatypePropertySimple(
 }
 
 data class TypeReferenceSimple(
-    val resolver: (TypeReference) -> TypeDeclaration,
+    val resolver: TypeResolver,
     override val typePath: List<String>,
     override val typeArguments: List<TypeReference>
 ) : TypeReference {
@@ -308,8 +324,7 @@ data class TypeReferenceSimple(
         return TypeInstanceSimple(decl, args)
     }
 
-    override val type: TypeInstance
-        get() = resolve(this)
+    override val type: TypeInstance get() = resolve(this)
 
 }
 

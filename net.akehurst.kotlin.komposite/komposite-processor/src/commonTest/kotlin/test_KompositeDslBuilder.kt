@@ -48,6 +48,9 @@ class test_KompositeDslBuilder {
                         }
                     }
                 }
+                dataType("TestDataTypeWithTypeParameters") {
+                    typeParameters("E")
+                }
             }
         }
 

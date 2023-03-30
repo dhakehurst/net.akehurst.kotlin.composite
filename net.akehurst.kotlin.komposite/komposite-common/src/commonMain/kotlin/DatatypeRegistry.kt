@@ -54,6 +54,9 @@ class DatatypeRegistry : DatatypeModel {
                 primitiveType("Float")
                 primitiveType("Double")
                 primitiveType("String")
+                dataType("Any") {
+
+                }
             }
             namespace("kotlin.collections") {
                 collectionType("Array", listOf("E"))
@@ -104,7 +107,7 @@ class DatatypeRegistry : DatatypeModel {
         try {
             val result = Komposite.process(kompositeModel)
             if (null == result.asm) {
-                throw KompositeException("Error processing config string", result.issues, null)
+                throw KompositeException("Error processing config string", result.issues.error, null)
             } else {
                 this.registerFromKompositeModel(result.asm!!, primitiveMappers)
             }
