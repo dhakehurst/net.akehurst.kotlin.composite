@@ -107,7 +107,7 @@ class DatatypeRegistry : DatatypeModel {
         try {
             val result = Komposite.process(kompositeModel)
             if (null == result.asm) {
-                throw KompositeException("Error processing config string", result.issues.error, null)
+                throw KompositeException("Error processing config string", result.issues.errors, null)
             } else {
                 this.registerFromKompositeModel(result.asm!!, primitiveMappers)
             }

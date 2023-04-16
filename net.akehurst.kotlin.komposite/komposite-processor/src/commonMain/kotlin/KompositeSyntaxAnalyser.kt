@@ -33,7 +33,7 @@ import net.akehurst.language.api.sppt.SPPTBranch
 import net.akehurst.language.api.sppt.SharedPackedParseTree
 
 
-class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
+class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel> {
 
     class SyntaxAnalyserException : RuntimeException {
         constructor(message: String) : super(message)
@@ -51,7 +51,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel,Any> {
         return emptyList()
     }
 
-    override fun transform(sppt: SharedPackedParseTree, mapToGrammar: (Int, Int) -> RuleItem, context: Any?): SyntaxAnalysisResult<DatatypeModel> {
+    override fun transform(sppt: SharedPackedParseTree, mapToGrammar: (Int, Int) -> RuleItem): SyntaxAnalysisResult<DatatypeModel> {
         val asm = this.transformBranch<DatatypeModel>(sppt.root.asBranch, "")
         return SyntaxAnalysisResultDefault(asm,issues,locationMap)
     }
