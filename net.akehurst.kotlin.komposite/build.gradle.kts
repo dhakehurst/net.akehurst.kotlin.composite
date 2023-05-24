@@ -19,7 +19,7 @@ import com.github.gmazzo.gradle.plugins.BuildConfigExtension
 import java.io.File
 
 plugins {
-    kotlin("multiplatform") version ("1.8.20") apply false
+    kotlin("multiplatform") version ("1.9.0-Beta") apply false
     id("org.jetbrains.dokka") version ("1.8.10") apply false
     id("com.github.gmazzo.buildconfig") version("3.1.0") apply false
     id("nu.studer.credentials") version ("3.0")
@@ -118,4 +118,5 @@ subprojects {
         val publishing = project.properties["publishing"] as PublishingExtension
         sign(publishing.publications)
     }
+
 }

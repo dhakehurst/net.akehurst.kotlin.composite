@@ -78,7 +78,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel> {
     private fun transformModel(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): DatatypeModel {
         val result = DatatypeModelSimple()
 
-        val namespaces = children[0].branchNonSkipChildren.forEach {
+        val namespaces = children.forEach {
             val ns = this.transformBranch<Namespace>(it, result)
             result.addNamespace(ns)
         }
