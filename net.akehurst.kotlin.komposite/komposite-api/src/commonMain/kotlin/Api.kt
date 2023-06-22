@@ -18,19 +18,19 @@ package net.akehurst.kotlin.komposite.api
 
 import kotlin.reflect.KClass
 
-class KompositeException(message:String,val issues:List<*>,cause:Throwable?) : RuntimeException(message,cause) {
-    constructor(message: String) : this(message, emptyList<Any>(),null)
-    constructor(message: String, cause: Throwable) : this(message, emptyList<Any>(),cause)
+class KompositeException(message: String, val issues: List<*>, cause: Throwable?) : RuntimeException(message, cause) {
+    constructor(message: String) : this(message, emptyList<Any>(), null)
+    constructor(message: String, cause: Throwable) : this(message, emptyList<Any>(), cause)
 }
 
 interface DatatypeModel {
     val namespaces: List<Namespace>
-    fun resolve(typeReference: TypeReference) : TypeDeclaration
+    fun resolve(typeReference: TypeReference): TypeDeclaration
 }
 
 interface Namespace {
     var model: DatatypeModel
-    val qualifiedName:String
+    val qualifiedName: String
     val path: List<String>
     val declaration: Map<String, TypeDeclaration>
     fun qualifiedNameBy(separator: String): String
@@ -39,19 +39,22 @@ interface Namespace {
 interface TypeDeclaration {
     val namespace: Namespace
     val name: String
-    val qualifiedName:String
-    val isPrimitive : Boolean
+    val qualifiedName: String
+    val isPrimitive: Boolean
     val isEnum: Boolean
-    val isCollection : Boolean
+    val isCollection: Boolean
+    val isAny: Boolean
 
     fun qualifiedNameBy(separator: String): String
+
+    fun instance(arguments: List<TypeInstance> = emptyList()): TypeInstance
 }
 
 interface PrimitiveType : TypeDeclaration {
 }
 
 interface EnumType : TypeDeclaration {
-    val clazz:KClass<Enum<*>>
+    val clazz: KClass<Enum<*>>
 }
 
 interface CollectionType : TypeDeclaration {
@@ -60,7 +63,7 @@ interface CollectionType : TypeDeclaration {
     val isSet: Boolean
     val isMap: Boolean
 
-    val parameters : List<String>
+    val parameters: List<String>
 }
 
 interface Datatype : TypeDeclaration {
@@ -115,19 +118,19 @@ interface Datatype : TypeDeclaration {
      * all properties found on the object minus (excluding) those marked as identity or ignore
      * <p> (required because Kotlin-Javascript reflection not yet supported)
      */
-    fun objectNonIdentityProperties(obj:Any): Set<DatatypeProperty>
+    fun objectNonIdentityProperties(obj: Any): Set<DatatypeProperty>
 
     /**
      * all mutable properties found on the object minus (excluding) those marked as identity or ignore
      * <p> (required because Kotlin-Javascript reflection not yet supported)
      */
-    fun objectNonIdentityMutableProperties(obj:Any): Set<DatatypeProperty>
+    fun objectNonIdentityMutableProperties(obj: Any): Set<DatatypeProperty>
 
     /**
      * all properties found on the object minus (excluding) those marked as composite or ignore
      * <p> (required because Kotlin-Javascript reflection not yet supported)
      */
-    fun objectReferenceProperties(obj:Any): Set<DatatypeProperty>
+    fun objectReferenceProperties(obj: Any): Set<DatatypeProperty>
 }
 
 interface DatatypeProperty {
@@ -152,9 +155,9 @@ enum class DatatypePropertyCharacteristic {
 }
 
 interface TypeReference {
-    val typePath:List<String>
+    val typePath: List<String>
     val typeArguments: List<TypeReference>
-    val type : TypeInstance
+    val type: TypeInstance
 }
 
 interface TypeInstance {
@@ -162,19 +165,20 @@ interface TypeInstance {
     val arguments: List<TypeInstance>
 }
 
-class PrimitiveMapper<P,R>(
-        val primitiveKlass: KClass<*>,
-        val rawKlass: KClass<*>,
-        val toRaw: (P) -> R,
-        val toPrimitive: (R) -> P
+class PrimitiveMapper<P, R>(
+    val primitiveKlass: KClass<*>,
+    val rawKlass: KClass<*>,
+    val toRaw: (P) -> R,
+    val toPrimitive: (R) -> P
 ) {
     companion object {
         fun <P : Any, R : Any> create(
-                primitiveKlass: KClass<P>,
-                rawKlass: KClass<R>,
-                toRaw: (P) -> R,
-                toPrimitive: (R) -> P): PrimitiveMapper<P,R> {
-            return PrimitiveMapper<P,R>(primitiveKlass, rawKlass, toRaw, toPrimitive)
+            primitiveKlass: KClass<P>,
+            rawKlass: KClass<R>,
+            toRaw: (P) -> R,
+            toPrimitive: (R) -> P
+        ): PrimitiveMapper<P, R> {
+            return PrimitiveMapper<P, R>(primitiveKlass, rawKlass, toRaw, toPrimitive)
         }
     }
 }
