@@ -19,7 +19,7 @@ import com.github.gmazzo.gradle.plugins.BuildConfigExtension
 import java.io.File
 
 plugins {
-    kotlin("multiplatform") version ("1.9.0-RC") apply false
+    kotlin("multiplatform") version ("1.9.0") apply false
     id("org.jetbrains.dokka") version ("1.8.20") apply false
     id("com.github.gmazzo.buildconfig") version("3.1.0") apply false
     id("nu.studer.credentials") version ("3.0")
