@@ -34,7 +34,7 @@ object Komposite {
                 grammarDefinitionStr = grammarStr,
                 configuration = Agl.configuration {
                     defaultGoalRuleName("model")
-                    syntaxAnalyserResolver { ProcessResultDefault(KompositeSyntaxAnalyser(),IssueHolder(LanguageProcessorPhase.ALL)) }
+                    syntaxAnalyserResolver { ProcessResultDefault(KompositeSyntaxAnalyser2(),IssueHolder(LanguageProcessorPhase.ALL)) }
                     semanticAnalyserResolver { ProcessResultDefault(KompositeSemanticAnalyser(),IssueHolder(LanguageProcessorPhase.ALL)) }
                 //formatter(Formatter())
                 }
@@ -76,9 +76,8 @@ object Komposite {
                    | 'dis'    // disregard / ignore
                    ;
             
-                NAME = "[a-zA-Z_][a-zA-Z0-9_]*" ;
-                POSITIVE_INTEGER = "[0-9]+" ;
-            
+                leaf NAME = "[a-zA-Z_][a-zA-Z0-9_]*" ;
+                leaf POSITIVE_INTEGER = "[0-9]+" ;
             }
             
             """.trimIndent()
