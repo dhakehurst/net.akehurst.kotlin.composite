@@ -17,163 +17,164 @@
 package net.akehurst.kotlin.komposite.processor
 
 import net.akehurst.kotlin.komposite.api.*
-import net.akehurst.language.agl.processor.IssueHolder
-import net.akehurst.language.agl.processor.SyntaxAnalysisResultDefault
-import net.akehurst.language.agl.syntaxAnalyser.BranchHandler
-import net.akehurst.language.agl.syntaxAnalyser.SyntaxAnalyserAbstract
+import net.akehurst.language.agl.collections.toSeparatedList
+import net.akehurst.language.agl.syntaxAnalyser.SyntaxAnalyserByMethodRegistrationAbstract
+import net.akehurst.language.agl.syntaxAnalyser.locationIn
 import net.akehurst.language.api.analyser.SyntaxAnalyser
 import net.akehurst.language.api.grammar.GrammarItem
-import net.akehurst.language.api.grammar.RuleItem
-import net.akehurst.language.api.parser.InputLocation
 import net.akehurst.language.api.processor.LanguageIssue
-import net.akehurst.language.api.processor.LanguageProcessorPhase
 import net.akehurst.language.api.processor.SentenceContext
-import net.akehurst.language.api.processor.SyntaxAnalysisResult
-import net.akehurst.language.api.sppt.SPPTBranch
-import net.akehurst.language.api.sppt.SharedPackedParseTree
+import net.akehurst.language.api.sppt.SpptDataNodeInfo
 
 
-class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel> {
+class KompositeSyntaxAnalyser : SyntaxAnalyserByMethodRegistrationAbstract<DatatypeModel>() {
 
     class SyntaxAnalyserException : RuntimeException {
         constructor(message: String) : super(message)
     }
 
-    private val issues= IssueHolder(LanguageProcessorPhase.SYNTAX_ANALYSIS)
-
-    override val locationMap: Map<Any, InputLocation> = mutableMapOf()
-
-    override fun clear() {
-
+    init {
+        super.register(this::model)
+        super.register(this::namespace)
+        super.register(this::path)
+        super.register(this::declaration)
+        super.register(this::primitive)
+        super.register(this::enum)
+        super.register(this::collection)
+        super.register(this::datatype)
+        super.register(this::supertypes)
+        super.register(this::property)
+        super.register(this::characteristic)
+        super.register(this::typeReference)
+        super.register(this::typeArgumentList)
     }
+
+    private val _localStore = mutableMapOf<String, Any>()
+
+    override val embeddedSyntaxAnalyser: Map<String, SyntaxAnalyser<DatatypeModel>> = emptyMap()
 
     override fun configure(configurationContext: SentenceContext<GrammarItem>, configuration: Map<String, Any>): List<LanguageIssue> {
         return emptyList()
     }
 
-    override fun transform(sppt: SharedPackedParseTree, mapToGrammar: (Int, Int) -> RuleItem): SyntaxAnalysisResult<DatatypeModel> {
-        val asm = this.transformBranch<DatatypeModel>(sppt.root.asBranch, "")
-        return SyntaxAnalysisResultDefault(asm,issues,locationMap)
-    }
-
-    private fun <T:Any> transformBranch(branch:SPPTBranch, arg: Any):T {
-        return when(branch.name) {
-            "model" -> transformModel(branch, branch.branchNonSkipChildren, arg) as T
-            "namespace" -> namespace(branch, branch.branchNonSkipChildren, arg) as T
-            "path" -> path(branch, branch.branchNonSkipChildren, arg) as T
-            "declaration" -> declaration(branch, branch.branchNonSkipChildren, arg) as T
-            "primitive" -> primitive(branch, branch.branchNonSkipChildren, arg) as T
-            "enum" -> enum(branch, branch.branchNonSkipChildren, arg) as T
-            "collection" -> collection(branch, branch.branchNonSkipChildren, arg) as T
-            "datatype" -> datatype(branch, branch.branchNonSkipChildren, arg) as T
-            "property" -> property(branch, branch.branchNonSkipChildren, arg) as T
-            "characteristic" -> characteristic(branch, branch.branchNonSkipChildren, arg) as T
-            "typeReference" -> typeReference(branch, branch.branchNonSkipChildren, arg) as T
-            "typeArgumentList" -> typeArgumentList(branch, branch.branchNonSkipChildren, arg) as T
-            else -> error("SPPTBranch with name '${branch.name}' not handled")
-        }
-    }
-
     // model = namespace* ;
-    private fun transformModel(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): DatatypeModel {
+    private fun model(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): DatatypeModel {
         val result = DatatypeModelSimple()
-
-        val namespaces = children.forEach {
-            val ns = this.transformBranch<Namespace>(it, result)
+        val namespaces = (children as List<((model: DatatypeModel) -> Namespace)?>).filterNotNull()
+        namespaces.forEach {
+            val ns = it.invoke(result)
             result.addNamespace(ns)
         }
-
         return result
     }
 
     // namespace = 'namespace' path '{' declaration* '}' ;
-    private fun namespace(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): Namespace {
-        val model = arg as DatatypeModel
-        val path = this.transformBranch<List<String>>(children[0], arg)
+    private fun namespace(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (model: DatatypeModel) -> Namespace {
+        val path = children[1] as List<String>
+        val declaration = (children[3] as List<((namespace: Namespace) -> TypeDeclaration)?>).filterNotNull()
         val qn = path.joinToString(separator = ".")
-        val result = NamespaceSimple(model, qn)
-        children[1].branchNonSkipChildren.forEach {
-            val dt = this.transformBranch<TypeDeclaration>(it, result)
-            result.addDeclaration(dt)
+
+        val result = { model: DatatypeModel ->
+            val ns = NamespaceSimple(model, qn)
+            declaration.forEach {
+                val dec = it.invoke(ns)
+                ns.addDeclaration(dec)
+            }
+            ns.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         }
         return result
     }
 
     // path = [ NAME / '.']+ ;
-    private fun path(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): List<String> {
-        return children.map { it.nonSkipMatchedText }
+    private fun path(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): List<String> {
+        return children.toSeparatedList<String, String>().items
     }
 
     // declaration = primitive | enum | collection | datatype ;
-    private fun declaration(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): TypeDeclaration {
-        return this.transformBranch(children[0], arg)
+    private fun declaration(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (namespace: Namespace) -> TypeDeclaration {
+        return children[0] as (namespace: Namespace) -> TypeDeclaration
     }
 
     // primitive = 'primitive' NAME ;
-    private fun primitive(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): PrimitiveType {
-        val namespace = arg as Namespace
-        val name = children[0].nonSkipMatchedText
-        val result = PrimitiveTypeSimple(namespace, name)
+    private fun primitive(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (namespace: Namespace) -> PrimitiveType {
+        val name = children[1] as String
+        val result = { namespace: Namespace ->
+            PrimitiveTypeSimple(namespace, name).also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+        }
         return result
     }
 
     // enum = 'enum' NAME ;
-    private fun enum(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): EnumType {
-        val namespace = arg as Namespace
-        val name = children[0].nonSkipMatchedText
-        val result = EnumTypeSimple(namespace, name)
+    private fun enum(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (namespace: Namespace) -> EnumType {
+        val name = children[1] as String
+        val result = { namespace: Namespace ->
+            EnumTypeSimple(namespace, name).also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+        }
         return result
     }
 
-    // collection = collection = 'collection' NAME '<' typeParameterList '>' ;
-    private fun collection(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): CollectionType {
-        val namespace = arg as Namespace
-        val name = children[0].nonSkipMatchedText
-        val params = children[1].branchNonSkipChildren.map { it.nonSkipMatchedText }
-        val result = CollectionTypeSimple(namespace, name, params)
+    // collection = 'collection' NAME '<' typeParameterList '>' ;
+    private fun collection(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (namespace: Namespace) -> CollectionType {
+        val name = children[1] as String
+        val params = children[3] as List<String>
+        val result = { namespace: Namespace ->
+            CollectionTypeSimple(namespace, name, params).also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+        }
         return result
     }
 
     // datatype = 'datatype' NAME supertypes? '{' property* '}' ;
-    // supertypes = ':' [ typeReference / ',']+ ;
-    private fun datatype(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): Datatype {
-        val namespace = arg as Namespace
-        val name = children[0].nonSkipMatchedText
-        val result = DatatypeSimple(namespace, name)
-        if (children[1].isEmptyMatch.not()) {
-            children[1].branchNonSkipChildren[0].branchNonSkipChildren[0].branchNonSkipChildren.forEach {
-                val st = this.transformBranch<TypeReference>(it, result)
-                result.addSuperType(st)
+    private fun datatype(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (namespace: Namespace) -> Datatype {
+        val name = children[1] as String
+        val supertypes = children[2] as List<(resolver:TypeResolver)->TypeReference>? ?: emptyList()
+        val property = (children[4] as List<((Datatype) -> DatatypeProperty)?>).filterNotNull()
+
+        val result = { namespace: Namespace ->
+            val dt = DatatypeSimple(namespace, name)
+            supertypes.forEach {
+                val tr = it.invoke(dt.resolver)
+                dt.addSuperType(tr)
             }
-        }
-        children[2].branchNonSkipChildren.forEach {
-            val p = this.transformBranch<DatatypeProperty>(it, result)
-            result.addProperty(p)
+            property.forEach {
+                val p = it.invoke(dt)
+                dt.addProperty(p)
+            }
+            dt.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         }
         return result
     }
 
-    // property = characteristic NAME : typeReference ;
-    private fun property(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): DatatypeProperty {
-        val datatype = arg as Datatype
-        val char:DatatypePropertyCharacteristic = this.transformBranch(children[0],arg)
-        val name = children[1].nonSkipMatchedText
-        val typeReference:TypeReference = this.transformBranch(children[2], arg)
+    // supertypes = ':' [ typeReference / ',']+ ;
+    private fun supertypes(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): List<(resolver:TypeResolver)->TypeReference> {
+        return (children[1] as List<*>).filterNotNull().toSeparatedList<(resolver:TypeResolver)->TypeReference, String>().items
+    }
 
-        val result = DatatypePropertySimple(datatype, name, typeReference)
-        when (char) {
-            DatatypePropertyCharacteristic.reference_val -> {
-                result.isReference = true
-                result.setIdentityIndex(datatype.identityProperties.size)
+    // property = characteristic NAME : typeReference ;
+    private fun property(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (Datatype) -> DatatypeProperty {
+        val char: DatatypePropertyCharacteristic = children[0] as DatatypePropertyCharacteristic
+        val name = children[1] as String
+        val typeReferenceFunc = children[3] as (resolver:TypeResolver)->TypeReference
+
+        val result = { datatype: Datatype ->
+            val typeReference = typeReferenceFunc.invoke((datatype as DatatypeSimple).resolver)
+            val dt = DatatypePropertySimple(datatype, name, typeReference)
+            when (char) {
+                DatatypePropertyCharacteristic.reference_val -> {
+                    dt.isReference = true
+                    dt.setIdentityIndex(datatype.identityProperties.size)
+                }
+
+                DatatypePropertyCharacteristic.reference_var -> dt.isReference = true
+                DatatypePropertyCharacteristic.composite_val -> {
+                    dt.isComposite = true
+                    dt.setIdentityIndex(datatype.identityProperties.size)
+                }
+
+                DatatypePropertyCharacteristic.composite_var -> dt.isComposite = true
+                DatatypePropertyCharacteristic.dis -> dt.ignore = true
+                else -> throw SyntaxAnalyserException("unknown characteristic")
             }
-            DatatypePropertyCharacteristic.reference_var -> result.isReference = true
-            DatatypePropertyCharacteristic.composite_val -> {
-                result.isComposite = true
-                result.setIdentityIndex(datatype.identityProperties.size)
-            }
-            DatatypePropertyCharacteristic.composite_var -> result.isComposite = true
-            DatatypePropertyCharacteristic.dis -> result.ignore = true
-            else ->throw SyntaxAnalyserException("unknown characteristic")
+            dt.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         }
         return result
     }
@@ -184,43 +185,30 @@ class KompositeSyntaxAnalyser : SyntaxAnalyser<DatatypeModel> {
     //                 | 'car'    // composite mutable property
     //                 | 'dis'    // disregard / ignore
     //                 ;
-    private fun characteristic(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): DatatypePropertyCharacteristic {
-        return when (target.nonSkipMatchedText) {
-            "reference-val"->DatatypePropertyCharacteristic.reference_val
-            "reference-var"->DatatypePropertyCharacteristic.reference_var
-            "composite-val"->DatatypePropertyCharacteristic.composite_val
-            "composite-var"->DatatypePropertyCharacteristic.composite_var
-            "dis"->DatatypePropertyCharacteristic.dis
-            else -> error("Value not allowed '${target.nonSkipMatchedText}'")
+    private fun characteristic(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): DatatypePropertyCharacteristic {
+        return when (children[0] as String) {
+            "reference-val" -> DatatypePropertyCharacteristic.reference_val
+            "reference-var" -> DatatypePropertyCharacteristic.reference_var
+            "composite-val" -> DatatypePropertyCharacteristic.composite_val
+            "composite-var" -> DatatypePropertyCharacteristic.composite_var
+            "dis" -> DatatypePropertyCharacteristic.dis
+            else -> error("Value not allowed '${children[0]}'")
         }
     }
 
     // typeReference = path typeArgumentList? '?'?;
-    private fun typeReference(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): TypeReference {
-        val path = children[0]
-        val typeArgumentList = children[1]
-        val typePath:List<String> = this.transformBranch(path, arg)
-        val typeArgs = if (typeArgumentList.isEmptyMatch) {
-            emptyList<TypeReference>()
-        } else {
-            this.transformBranch(typeArgumentList.branchNonSkipChildren[0], arg)
+    private fun typeReference(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (resolver:TypeResolver)->TypeReference {
+        val path = children[0] as List<String>
+        val typeArgumentList = children[1] as List<TypeReference>? ?: emptyList()
+        return { resolver:TypeResolver ->
+            TypeReferenceSimple(resolver, path, typeArgumentList).also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         }
-        val dt = arg as DatatypeSimple
-        return TypeReferenceSimple(dt.resolver, typePath, typeArgs)
     }
 
     //typeArgumentList = '<' [ typeReference / ',']+ '>' ;
-    private fun typeArgumentList(target: SPPTBranch, children: List<SPPTBranch>, arg: Any): List<TypeReference> {
-        val list = children[0]
-        return if (list.isEmptyMatch) {
-            emptyList()
-        } else {
-            val dt = arg as Datatype
-            val elems = list.branchNonSkipChildren
-            elems.map {
-                this.transformBranch<TypeReference>(it, arg)
-            }
-        }
+    private fun typeArgumentList(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): List<TypeReference> {
+        val list = (children[1] as List<*>).toSeparatedList<TypeReference, String>().items
+        return list
     }
 
 }

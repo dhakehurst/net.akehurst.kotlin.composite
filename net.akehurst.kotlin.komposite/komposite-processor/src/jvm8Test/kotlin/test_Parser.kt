@@ -62,9 +62,17 @@ class test_Parser(val data: Data) {
 
 
     @Test
-    fun test() {
+    fun parse() {
         val result = processor.parse(this.data.fileContent)
         assertNotNull(result.sppt,result.issues.joinToString(separator = "\n"){"$it"})
+        //val resultStr = result.asString
+        //assertEquals(original, resultStr)
+    }
+
+    @Test
+    fun process() {
+        val result = processor.process(this.data.fileContent)
+        assertNotNull(result.asm,result.issues.joinToString(separator = "\n"){"$it"})
         //val resultStr = result.asString
         //assertEquals(original, resultStr)
     }
