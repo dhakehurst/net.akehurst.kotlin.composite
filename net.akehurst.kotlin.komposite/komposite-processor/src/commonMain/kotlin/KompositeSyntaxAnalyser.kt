@@ -19,11 +19,11 @@ package net.akehurst.kotlin.komposite.processor
 import net.akehurst.kotlin.komposite.api.*
 import net.akehurst.language.agl.collections.toSeparatedList
 import net.akehurst.language.agl.syntaxAnalyser.SyntaxAnalyserByMethodRegistrationAbstract
-import net.akehurst.language.agl.syntaxAnalyser.locationIn
 import net.akehurst.language.api.analyser.SyntaxAnalyser
 import net.akehurst.language.api.grammar.GrammarItem
 import net.akehurst.language.api.processor.LanguageIssue
 import net.akehurst.language.api.processor.SentenceContext
+import net.akehurst.language.api.sppt.Sentence
 import net.akehurst.language.api.sppt.SpptDataNodeInfo
 
 
@@ -33,7 +33,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyserByMethodRegistrationAbstract<Datat
         constructor(message: String) : super(message)
     }
 
-    init {
+    override fun registerHandlers() {
         super.register(this::model)
         super.register(this::namespace)
         super.register(this::path)
@@ -51,6 +51,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyserByMethodRegistrationAbstract<Datat
 
     private val _localStore = mutableMapOf<String, Any>()
 
+
     override val embeddedSyntaxAnalyser: Map<String, SyntaxAnalyser<DatatypeModel>> = emptyMap()
 
     override fun configure(configurationContext: SentenceContext<GrammarItem>, configuration: Map<String, Any>): List<LanguageIssue> {
@@ -58,7 +59,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyserByMethodRegistrationAbstract<Datat
     }
 
     // model = namespace* ;
-    private fun model(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): DatatypeModel {
+    private fun model(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): DatatypeModel {
         val result = DatatypeModelSimple()
         val namespaces = (children as List<((model: DatatypeModel) -> Namespace)?>).filterNotNull()
         namespaces.forEach {
@@ -69,7 +70,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyserByMethodRegistrationAbstract<Datat
     }
 
     // namespace = 'namespace' path '{' declaration* '}' ;
-    private fun namespace(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (model: DatatypeModel) -> Namespace {
+    private fun namespace(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (model: DatatypeModel) -> Namespace {
         val path = children[1] as List<String>
         val declaration = (children[3] as List<((namespace: Namespace) -> TypeDeclaration)?>).filterNotNull()
         val qn = path.joinToString(separator = ".")
@@ -80,83 +81,83 @@ class KompositeSyntaxAnalyser : SyntaxAnalyserByMethodRegistrationAbstract<Datat
                 val dec = it.invoke(ns)
                 ns.addDeclaration(dec)
             }
-            ns.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+            ns//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         }
         return result
     }
 
     // path = [ NAME / '.']+ ;
-    private fun path(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): List<String> {
+    private fun path(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<String> {
         return children.toSeparatedList<String, String>().items
     }
 
     // declaration = primitive | enum | collection | datatype ;
-    private fun declaration(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (namespace: Namespace) -> TypeDeclaration {
+    private fun declaration(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: Namespace) -> TypeDeclaration {
         return children[0] as (namespace: Namespace) -> TypeDeclaration
     }
 
     // primitive = 'primitive' NAME ;
-    private fun primitive(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (namespace: Namespace) -> PrimitiveType {
+    private fun primitive(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: Namespace) -> PrimitiveType {
         val name = children[1] as String
         val result = { namespace: Namespace ->
-            PrimitiveTypeSimple(namespace, name).also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+            PrimitiveTypeSimple(namespace, name)//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         }
         return result
     }
 
     // enum = 'enum' NAME ;
-    private fun enum(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (namespace: Namespace) -> EnumType {
+    private fun enum(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: Namespace) -> EnumType {
         val name = children[1] as String
         val result = { namespace: Namespace ->
-            EnumTypeSimple(namespace, name).also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+            EnumTypeSimple(namespace, name)//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         }
         return result
     }
 
     // collection = 'collection' NAME '<' typeParameterList '>' ;
-    private fun collection(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (namespace: Namespace) -> CollectionType {
+    private fun collection(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: Namespace) -> CollectionType {
         val name = children[1] as String
         val params = children[3] as List<String>
         val result = { namespace: Namespace ->
-            CollectionTypeSimple(namespace, name, params).also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+            CollectionTypeSimple(namespace, name, params)//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         }
         return result
     }
 
     // datatype = 'datatype' NAME supertypes? '{' property* '}' ;
-    private fun datatype(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (namespace: Namespace) -> Datatype {
+    private fun datatype(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: Namespace) -> Datatype {
         val name = children[1] as String
-        val supertypes = children[2] as List<(resolver:TypeResolver)->TypeReference>? ?: emptyList()
+        val supertypes = children[2] as List<TypeReference>? ?: emptyList()
         val property = (children[4] as List<((Datatype) -> DatatypeProperty)?>).filterNotNull()
 
         val result = { namespace: Namespace ->
             val dt = DatatypeSimple(namespace, name)
             supertypes.forEach {
-                val tr = it.invoke(dt.resolver)
-                dt.addSuperType(tr)
+                (it as TypeReferenceSimple).contextResolver = dt.resolver
+                dt.addSuperType(it)
             }
             property.forEach {
                 val p = it.invoke(dt)
                 dt.addProperty(p)
             }
-            dt.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+            dt//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         }
         return result
     }
 
     // supertypes = ':' [ typeReference / ',']+ ;
-    private fun supertypes(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): List<(resolver:TypeResolver)->TypeReference> {
-        return (children[1] as List<*>).filterNotNull().toSeparatedList<(resolver:TypeResolver)->TypeReference, String>().items
+    private fun supertypes(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<TypeReference> {
+        return (children[1] as List<*>).filterNotNull().toSeparatedList<TypeReference, String>().items
     }
 
     // property = characteristic NAME : typeReference ;
-    private fun property(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (Datatype) -> DatatypeProperty {
+    private fun property(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (Datatype) -> DatatypeProperty {
         val char: DatatypePropertyCharacteristic = children[0] as DatatypePropertyCharacteristic
         val name = children[1] as String
-        val typeReferenceFunc = children[3] as (resolver:TypeResolver)->TypeReference
+        val typeReference = children[3] as TypeReferenceSimple
 
         val result = { datatype: Datatype ->
-            val typeReference = typeReferenceFunc.invoke((datatype as DatatypeSimple).resolver)
+            typeReference.contextResolver = (datatype as DatatypeSimple).resolver
             val dt = DatatypePropertySimple(datatype, name, typeReference)
             when (char) {
                 DatatypePropertyCharacteristic.reference_val -> {
@@ -174,7 +175,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyserByMethodRegistrationAbstract<Datat
                 DatatypePropertyCharacteristic.dis -> dt.ignore = true
                 else -> throw SyntaxAnalyserException("unknown characteristic")
             }
-            dt.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+            dt//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         }
         return result
     }
@@ -185,7 +186,7 @@ class KompositeSyntaxAnalyser : SyntaxAnalyserByMethodRegistrationAbstract<Datat
     //                 | 'car'    // composite mutable property
     //                 | 'dis'    // disregard / ignore
     //                 ;
-    private fun characteristic(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): DatatypePropertyCharacteristic {
+    private fun characteristic(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): DatatypePropertyCharacteristic {
         return when (children[0] as String) {
             "reference-val" -> DatatypePropertyCharacteristic.reference_val
             "reference-var" -> DatatypePropertyCharacteristic.reference_var
@@ -197,16 +198,15 @@ class KompositeSyntaxAnalyser : SyntaxAnalyserByMethodRegistrationAbstract<Datat
     }
 
     // typeReference = path typeArgumentList? '?'?;
-    private fun typeReference(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): (resolver:TypeResolver)->TypeReference {
+    private fun typeReference(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): TypeReference {
         val path = children[0] as List<String>
         val typeArgumentList = children[1] as List<TypeReference>? ?: emptyList()
-        return { resolver:TypeResolver ->
-            TypeReferenceSimple(resolver, path, typeArgumentList).also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
-        }
+        val tr = TypeReferenceSimple(path, typeArgumentList)//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+        return tr
     }
 
     //typeArgumentList = '<' [ typeReference / ',']+ '>' ;
-    private fun typeArgumentList(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: String): List<TypeReference> {
+    private fun typeArgumentList(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<TypeReference> {
         val list = (children[1] as List<*>).toSeparatedList<TypeReference, String>().items
         return list
     }

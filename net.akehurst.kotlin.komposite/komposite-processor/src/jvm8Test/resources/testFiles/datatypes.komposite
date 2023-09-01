@@ -1,5 +1,6 @@
 namespace net.akehurst.kotlin.composite.api {
-
+  primitive String
+  primitive Int
   datatype TestDatatype {
         reference-val id : String
         composite-var prop1 : String

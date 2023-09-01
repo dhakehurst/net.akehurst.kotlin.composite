@@ -22,14 +22,15 @@ import kotlin.test.assertNotNull
 
 class test_Processor() {
 
-    companion object {
+    private companion object {
         var processor = Komposite.processor()
         val komposite = """
             namespace kotlin.collections {
                 collection List<E>
             }
             namespace net.akehurst.kotlin.composite.api {
-              
+              primitive String
+              primitive Int
               primitive XXXX
               enum YYYY
               

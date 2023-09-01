@@ -34,7 +34,7 @@ class test_Parser(val data: Data) {
         }
     }
 
-    companion object {
+    private companion object {
         var processor = Komposite.processor()
 
         val sourceFiles = listOf(

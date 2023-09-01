@@ -27,7 +27,7 @@ class DatatypeModelSimple : DatatypeModel {
 
     companion object {
         //TODO: 'close' this set of instances
-        fun ANY_TYPE_REF(resolver: TypeResolver) = TypeReferenceSimple(resolver, listOf("kotlin", "Any"), emptyList())
+        fun ANY_TYPE_REF(resolver: TypeResolver) = TypeReferenceSimple(listOf("kotlin", "Any"), emptyList())
 
         fun ARRAY_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "Array", listOf("E"))
         fun LIST_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "List", listOf("E"))
@@ -46,7 +46,8 @@ class DatatypeModelSimple : DatatypeModel {
     fun findFirstByName(typeName: String): TypeDeclaration {
         return this.namespaces.mapNotNull {
             it.declaration[typeName]
-        }.firstOrNull() ?: throw KompositeException("TypeDeclaration $typeName not found in any namespace")
+        }.firstOrNull()
+            ?: throw KompositeException("TypeDeclaration $typeName not found in any namespace")
     }
 
     override fun resolve(typeReference: TypeReference): TypeDeclaration {
@@ -323,20 +324,20 @@ data class DatatypePropertySimple(
 }
 
 data class TypeReferenceSimple(
-    val resolver: TypeResolver,
     override val typePath: List<String>,
     override val typeArguments: List<TypeReference>
 ) : TypeReference {
 
-    private fun resolve(ref: TypeReference): TypeInstance {
-        val decl = this.resolver(ref)
-        val args = ref.typeArguments.map {
-            resolve(it)
-        }
-        return TypeInstanceSimple(decl, args)
+    lateinit var contextResolver: TypeResolver
+
+    private fun resolve(resolver: TypeResolver):TypeInstance {
+        val decl = resolver.invoke(this)
+        val args = typeArguments.map { (it as TypeReferenceSimple).resolve(resolver) }
+        val t = decl.instance(args)
+        return t
     }
 
-    override val type: TypeInstance get() = resolve(this)
+    override val type: TypeInstance by lazy { resolve(contextResolver) }
 
 }
 
