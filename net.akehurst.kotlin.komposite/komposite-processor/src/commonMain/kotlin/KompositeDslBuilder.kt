@@ -49,19 +49,19 @@ class KompositeNamespaceBuilder(
     private val namespace = NamespaceSimple(model, qualifiedName)
 
     fun enumType(name: String): EnumType {
-        val et = EnumTypeSimple(namespace, name)
+        val et = DtEnumTypeSimple(namespace, name)
         this.namespace.addDeclaration(et)
         return et
     }
 
     fun primitiveType(name: String): PrimitiveType {
-        val pt = PrimitiveTypeSimple(namespace, name)
+        val pt = DtPrimitiveTypeSimple(namespace, name)
         this.namespace.addDeclaration(pt)
         return pt
     }
 
     fun collectionType(name: String, typeParameterNames: List<String>): CollectionType {
-        val ct = CollectionTypeSimple(namespace, name, typeParameterNames)
+        val ct = DtCollectionTypeSimple(namespace, name, typeParameterNames)
         this.namespace.addDeclaration(ct)
         return ct
     }
@@ -89,7 +89,7 @@ class KompositeDatatypeBuilder(
     fun superTypes(vararg typeNames:String) {
         typeNames.forEach {
             val typePath = it.split(".").toList()
-            val superTypeRef = TypeReferenceSimple(typePath, emptyList())
+            val superTypeRef = datatype.createTypeReference(typePath, emptyList())
             datatype.addSuperType(superTypeRef)
         }
     }
@@ -129,7 +129,7 @@ class KompositePropertySetBuilder(
         val tab = KompositeTypeArgumentBuilder(datatype)
         tab.typeArguments()
         val typeArgs = tab.build()
-        val typeReference = TypeReferenceSimple(typePath, typeArgs)
+        val typeReference = datatype.createTypeReference(typePath, typeArgs)
         val prop = DatatypePropertySimple(datatype, name, typeReference)
         prop.isComposite = true
         if (isConstructorArgs) prop.setIdentityIndex(props.size)
@@ -142,7 +142,7 @@ class KompositePropertySetBuilder(
         val tab = KompositeTypeArgumentBuilder(datatype)
         tab.typeArguments()
         val typeArgs = tab.build()
-        val typeReference = TypeReferenceSimple(typePath, typeArgs)
+        val typeReference = datatype.createTypeReference(typePath, typeArgs)
         val prop = DatatypePropertySimple(datatype, name, typeReference)
         prop.isReference = true
         if (isConstructorArgs) prop.setIdentityIndex(props.size)
@@ -166,7 +166,7 @@ class KompositeTypeArgumentBuilder(
         val tab = KompositeTypeArgumentBuilder(datatype)
         tab.typeArguments()
         val typeArgs = tab.build()
-        val tref = TypeReferenceSimple(typePath, typeArgs)
+        val tref = datatype.createTypeReference(typePath, typeArgs)
         list.add(tref)
         return tref
     }

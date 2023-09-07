@@ -73,14 +73,24 @@ fun DatatypeProperty.set(obj: Any, value: Any?) {
             reflect.setProperty(this.name, value)
         } else {
             val existingValue = reflect.getProperty(this.name)
-            if (existingValue is MutableCollection<*> && value is Collection<*>) {
-                existingValue.clear()
-                (existingValue as MutableCollection<Any>).addAll(value as Collection<Any>)
-            } else if (existingValue is MutableMap<*, *> && value is Map<*, *>) {
-                existingValue.clear()
-                (existingValue as MutableMap<Any, Any>).putAll(value as Map<Any, Any>)
-            } else {
-                error("Cannot set property ${this.datatype.name}.${this.name} to ${value} because it is not a mutable property or Mutable collection")
+            when {
+                (existingValue is MutableCollection<*> && value is Collection<*>) -> {
+                    existingValue.clear()
+                    (existingValue as MutableCollection<Any>).addAll(value as Collection<Any>)
+                }
+                (existingValue is MutableCollection<*> && value is Iterable<*>) -> {
+                    existingValue.clear()
+                    (existingValue as MutableCollection<Any>).addAll(value as Iterable<Any>)
+                }
+                (existingValue is MutableCollection<*> && value is Array<*>) -> {
+                    existingValue.clear()
+                    (existingValue as MutableCollection<Any>).addAll(value as Array<Any>)
+                }
+                (existingValue is MutableMap<*, *> && value is Map<*, *>) -> {
+                    existingValue.clear()
+                    (existingValue as MutableMap<Any, Any>).putAll(value as Map<Any, Any>)
+                }
+                else -> error("Cannot set property ${this.datatype.name}.${this.name} to ${value} because it is not a mutable property or Mutable collection")
             }
         }
 

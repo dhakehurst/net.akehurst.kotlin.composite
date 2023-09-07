@@ -29,10 +29,10 @@ class DatatypeModelSimple : DatatypeModel {
         //TODO: 'close' this set of instances
         fun ANY_TYPE_REF(resolver: TypeResolver) = TypeReferenceSimple(listOf("kotlin", "Any"), emptyList())
 
-        fun ARRAY_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "Array", listOf("E"))
-        fun LIST_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "List", listOf("E"))
-        fun SET_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "Set", listOf("E"))
-        fun MAP_TYPE(model: DatatypeModel) = CollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "Map", listOf("K", "V"))
+        fun ARRAY_TYPE(model: DatatypeModel) = DtCollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "Array", listOf("E"))
+        fun LIST_TYPE(model: DatatypeModel) = DtCollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "List", listOf("E"))
+        fun SET_TYPE(model: DatatypeModel) = DtCollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "Set", listOf("E"))
+        fun MAP_TYPE(model: DatatypeModel) = DtCollectionTypeSimple(NamespaceSimple(model, ("kotlin.collections")), "Map", listOf("K", "V"))
     }
 
     private val _namespaces = mutableListOf<Namespace>()
@@ -60,6 +60,7 @@ class DatatypeModelSimple : DatatypeModel {
             ns.declaration[typeName] ?: throw KompositeException("TypeDeclaration $typeName not found in namespace $nsPath")
         }
     }
+
 }
 
 class NamespaceSimple(
@@ -96,7 +97,7 @@ class NamespaceSimple(
     }
 }
 
-data class PrimitiveTypeSimple(
+data class DtPrimitiveTypeSimple(
     override val namespace: Namespace,
     override val name: String
 ) : PrimitiveType {
@@ -112,7 +113,7 @@ data class PrimitiveTypeSimple(
     override fun instance(arguments: List<TypeInstance>): TypeInstance = TypeInstanceSimple(this, emptyList<TypeInstance>())
 }
 
-data class EnumTypeSimple(
+data class DtEnumTypeSimple(
     override val namespace: Namespace,
     override val name: String
 ) : EnumType {
@@ -130,7 +131,7 @@ data class EnumTypeSimple(
     override val clazz: KClass<Enum<*>> by lazy { KotlinxReflect.classForName(qualifiedName) as KClass<Enum<*>> }
 }
 
-data class CollectionTypeSimple(
+data class DtCollectionTypeSimple(
     override val namespace: Namespace,
     override val name: String,
     override val parameters: List<String>
@@ -166,7 +167,7 @@ data class DatatypeSimple(
 
     internal val resolver: TypeResolver = { tref ->
         if (1 == tref.typePath.size && _typeParameters.contains(tref.typePath[0])) {
-            DatatypeModelSimple.ANY_TYPE_REF(this.namespace.model::resolve).type.declaration
+            DatatypeModelSimple.ANY_TYPE_REF { this.namespace.model.resolve(it) }.type.declaration
         } else {
             this.namespace.model.resolve(tref)
         }
@@ -287,6 +288,12 @@ data class DatatypeSimple(
         }.toSet()
         return (property.values.toSet() + objProperties) - this.compositeProperties - this.ignoredProperties
     }
+
+    fun createTypeReference(typePath: List<String>, typeArguments: List<TypeReference>): TypeReference {
+        val tr = TypeReferenceSimple(typePath, typeArguments)
+        tr.contextResolver = this.resolver
+        return tr
+    }
 }
 
 data class DatatypePropertySimple(
@@ -328,17 +335,21 @@ data class TypeReferenceSimple(
     override val typeArguments: List<TypeReference>
 ) : TypeReference {
 
-    lateinit var contextResolver: TypeResolver
+    var contextResolver: TypeResolver? = null
 
-    private fun resolve(resolver: TypeResolver):TypeInstance {
+    private fun resolve(resolver: TypeResolver): TypeInstance {
         val decl = resolver.invoke(this)
         val args = typeArguments.map { (it as TypeReferenceSimple).resolve(resolver) }
         val t = decl.instance(args)
         return t
     }
 
-    override val type: TypeInstance by lazy { resolve(contextResolver) }
+    override val type: TypeInstance by lazy { resolve(contextResolver?: error("context resolver not set for TypeReference to '$this'")) }
 
+    override fun toString(): String = when {
+        typeArguments.isEmpty() -> typePath.joinToString(separator = ".")
+        else -> typePath.joinToString(separator = ".") + "<${typeArguments.joinToString()}>"
+    }
 }
 
 data class TypeInstanceSimple(
