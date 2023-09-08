@@ -16,7 +16,6 @@
 
 package net.akehurst.kotlin.komposite.processor
 
-import net.akehurst.kotlin.komposite.api.DatatypeModel
 import net.akehurst.language.agl.processor.IssueHolder
 import net.akehurst.language.agl.processor.SemanticAnalysisResultDefault
 import net.akehurst.language.api.analyser.SemanticAnalyser
@@ -26,9 +25,10 @@ import net.akehurst.language.api.processor.LanguageIssue
 import net.akehurst.language.api.processor.LanguageProcessorPhase
 import net.akehurst.language.api.processor.SemanticAnalysisResult
 import net.akehurst.language.api.processor.SentenceContext
+import net.akehurst.language.typemodel.api.TypeModel
 
 
-class KompositeSemanticAnalyser : SemanticAnalyser<DatatypeModel,Any> {
+class KompositeSemanticAnalyser : SemanticAnalyser<TypeModel,Any> {
 
 
     override fun clear() {
@@ -39,7 +39,7 @@ class KompositeSemanticAnalyser : SemanticAnalyser<DatatypeModel,Any> {
        return emptyList<LanguageIssue>()
     }
 
-    override fun analyse(asm: DatatypeModel, locationMap: Map<Any, InputLocation>?, context: Any?, options: Map<String, Any>): SemanticAnalysisResult {
+    override fun analyse(asm: TypeModel, locationMap: Map<Any, InputLocation>?, context: Any?, options: Map<String, Any>): SemanticAnalysisResult {
         return SemanticAnalysisResultDefault(IssueHolder(LanguageProcessorPhase.SEMANTIC_ANALYSIS))
     }
 }

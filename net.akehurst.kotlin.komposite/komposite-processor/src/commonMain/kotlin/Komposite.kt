@@ -16,25 +16,25 @@
 
 package net.akehurst.kotlin.komposite.processor
 
-import net.akehurst.kotlin.komposite.api.DatatypeModel
 import net.akehurst.language.agl.processor.Agl
 import net.akehurst.language.agl.processor.IssueHolder
 import net.akehurst.language.agl.processor.ProcessResultDefault
 import net.akehurst.language.api.processor.LanguageProcessor
 import net.akehurst.language.api.processor.LanguageProcessorPhase
+import net.akehurst.language.typemodel.api.TypeModel
 
 object Komposite {
 
-    private var _processor: LanguageProcessor<DatatypeModel,Any>? = null
+    private var _processor: LanguageProcessor<TypeModel,Any>? = null
 
-    internal fun processor(): LanguageProcessor<DatatypeModel,Any> {
+    internal fun processor(): LanguageProcessor<TypeModel,Any> {
         if (null == _processor) {
             val grammarStr = fetchGrammarStr()
-            val res = Agl.processorFromString<DatatypeModel,Any>(
+            val res = Agl.processorFromString<TypeModel,Any>(
                 grammarDefinitionStr = grammarStr,
                 configuration = Agl.configuration {
                     defaultGoalRuleName("model")
-                    syntaxAnalyserResolver { ProcessResultDefault(KompositeSyntaxAnalyser(),IssueHolder(LanguageProcessorPhase.ALL)) }
+                    syntaxAnalyserResolver { ProcessResultDefault(KompositeSyntaxAnalyser2(),IssueHolder(LanguageProcessorPhase.ALL)) }
                     semanticAnalyserResolver { ProcessResultDefault(KompositeSemanticAnalyser(),IssueHolder(LanguageProcessorPhase.ALL)) }
                 //formatter(Formatter())
                 }
@@ -56,8 +56,9 @@ object Komposite {
                      SINGLE_LINE_COMMENT = "//[^\n\r]*" ;
             
                 model = namespace* ;
-                namespace = 'namespace' path '{' declaration* '}' ;
-                path = [ NAME / '.']+ ;
+                namespace = 'namespace' qualifiedName '{' import* declaration* '}' ;
+                qualifiedName = [ NAME / '.']+ ;
+                import = 'import' qualifiedName ;
                 declaration = primitive | enum | collection | datatype ;
                 primitive = 'primitive' NAME ;
                 enum = 'enum' NAME ;
@@ -66,7 +67,7 @@ object Komposite {
                 datatype = 'datatype' NAME supertypes? '{' property* '}' ;
                 supertypes = ':' [ typeReference / ',']+ ;
                 property = characteristic NAME ':' typeReference ;
-                typeReference = path typeArgumentList? '?'?;
+                typeReference = qualifiedName typeArgumentList? '?'?;
                 typeArgumentList = '<' [ typeReference / ',']+ '>' ;
                 characteristic
                    = 'reference-val'    // reference, constructor argument

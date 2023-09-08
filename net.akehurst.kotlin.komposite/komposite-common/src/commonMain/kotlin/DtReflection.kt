@@ -16,13 +16,20 @@
 
 package net.akehurst.kotlin.komposite.common
 
-import net.akehurst.kotlin.komposite.api.Datatype
-import net.akehurst.kotlin.komposite.api.DatatypeProperty
-import net.akehurst.kotlin.komposite.api.EnumType
 import net.akehurst.kotlin.komposite.api.KompositeException
+import net.akehurst.kotlinx.reflect.KotlinxReflect
 import net.akehurst.kotlinx.reflect.reflect
+import net.akehurst.language.typemodel.api.*
+import kotlin.reflect.KClass
 
-fun Datatype.construct(vararg constructorArgs: Any?): Any {
+val TypeDefinition.clazz: KClass<*> get() = KotlinxReflect.classForName(qualifiedName)
+
+//val PropertyDeclaration.isMutable: Boolean get() = this.datatype.clazz.reflect().isPropertyMutable(this.name)
+// reflection isMutable does not work at present!
+// assume member properties are mutable unless they are a collection (in which case they are assumed a mutable collection)
+val PropertyDeclaration.isMutable: Boolean get() = characteristics.contains(PropertyCharacteristic.MEMBER) && typeInstance.type !is CollectionType
+
+fun DataType.construct(vararg constructorArgs: Any?): Any {
     try {
         val cls = this.clazz
         val obj = cls.reflect().construct(*constructorArgs)
@@ -32,7 +39,7 @@ fun Datatype.construct(vararg constructorArgs: Any?): Any {
     }
 }
 
-fun DatatypeProperty.get(obj: Any): Any? {
+fun PropertyDeclaration.get(obj: Any): Any? {
     val reflect = obj.reflect()
     return reflect.getProperty(this.name)
 }
@@ -66,7 +73,7 @@ fun DatatypeProperty.set(obj: Any, value: Any?) {
     }
 }
 */
-fun DatatypeProperty.set(obj: Any, value: Any?) {
+fun PropertyDeclaration.set(obj: Any, value: Any?) {
     try{
         val reflect = obj.reflect()
         if (this.isMutable) {
@@ -90,12 +97,12 @@ fun DatatypeProperty.set(obj: Any, value: Any?) {
                     existingValue.clear()
                     (existingValue as MutableMap<Any, Any>).putAll(value as Map<Any, Any>)
                 }
-                else -> error("Cannot set property ${this.datatype.name}.${this.name} to ${value} because it is not a mutable property or Mutable collection")
+                else -> error("Cannot set property ${this.owner.name}.${this.name} to ${value} because it is not a mutable property or Mutable collection")
             }
         }
 
     } catch (t: Throwable) {
-        throw KompositeException("Unable to set property ${this.datatype.name}.${this.name} to ${value} due to ${t.message ?: "Unknown"}")
+        throw KompositeException("Unable to set property ${this.owner.name}.${this.name} to ${value} due to ${t.message ?: "Unknown"}")
     }
 }
 

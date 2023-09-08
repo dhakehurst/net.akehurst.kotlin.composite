@@ -16,7 +16,10 @@
 
 package net.akehurst.kotlin.komposite.processor
 
+import net.akehurst.language.typemodel.api.PropertyCharacteristic
+import net.akehurst.language.typemodel.api.typeModel
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 
@@ -25,10 +28,10 @@ class test_Processor() {
     private companion object {
         var processor = Komposite.processor()
         val komposite = """
-            namespace kotlin.collections {
+            namespace colls {
                 collection List<E>
             }
-            namespace net.akehurst.kotlin.composite.api {
+            namespace test {
               primitive String
               primitive Int
               primitive XXXX
@@ -38,7 +41,7 @@ class test_Processor() {
                     composite-val id : String
                     composite-var prop1 : String
                     reference-var prop2 : Int
-                    dis prop4 : String
+                    dis ignored : String
                     composite-val id2 : Int
               }
               
@@ -55,19 +58,42 @@ class test_Processor() {
 
     @Test
     fun parse() {
-
-        val result = processor.parse( komposite)
-        assertNotNull(result.sppt,result.issues.joinToString(separator = "\n"){"$it"})
+        val result = processor.parse(komposite)
+        assertNotNull(result.sppt, result.issues.joinToString(separator = "\n") { "$it" })
         //val resultStr = result.asString
         //assertEquals(original, resultStr)
     }
 
     @Test
     fun process() {
-        val result = processor.process( komposite)
-        assertNotNull(result.asm,result.issues.joinToString(separator = "\n"){"$it"})
-        //val resultStr = result.asString
-        //assertEquals(original, resultStr)
+
+        val expected = typeModel("aTypeModel") {
+            namespace("colls", emptyList()) {
+                collectionType("List", listOf("E"))
+            }
+            namespace("test", emptyList()) {
+                primitiveType("String")
+                primitiveType("Int")
+                primitiveType("XXXX")
+                enumType("YYYY", emptyList())
+                dataType("TestDatatype") {
+                    propertyOf(setOf(COMPOSITE, IDENTITY), "id", "String")
+                    propertyOf(setOf(COMPOSITE, MEMBER), "prop1", "String")
+                    propertyOf(setOf(REFERENCE, MEMBER), "prop2", "Int")
+                    propertyOf(setOf(), "ignored", "String")
+                    propertyOf(setOf(COMPOSITE, IDENTITY), "id2", "Int")
+                }
+                dataType("Dt2")
+                dataType("TestDatatype2") {
+                    superTypes("TestDatatype", "Dt2")
+                }
+
+            }
+        }
+
+        val result = processor.process(komposite)
+        assertNotNull(result.asm, result.issues.joinToString(separator = "\n") { "$it" })
+        assertEquals(expected.asString(), result.asm?.asString())
     }
 
 }

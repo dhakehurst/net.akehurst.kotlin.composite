@@ -26,6 +26,7 @@ import net.akehurst.language.api.sppt.Sentence
 import net.akehurst.language.api.sppt.SpptDataNodeInfo
 import net.akehurst.language.typemodel.api.*
 import net.akehurst.language.typemodel.simple.*
+import net.akehurst.language.typemodel.simple.TypeInstanceSimple
 
 
 class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<TypeModel>() {
@@ -37,7 +38,8 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
     override fun registerHandlers() {
         super.register(this::model)
         super.register(this::namespace)
-        super.register(this::path)
+        super.register(this::qualifiedName)
+        super.register(this::import)
         super.register(this::declaration)
         super.register(this::primitive)
         super.register(this::enum)
@@ -50,14 +52,10 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
         super.register(this::typeArgumentList)
     }
 
-    private val _localStore = mutableMapOf<String, Any>()
-    private val typeReferences = mutableListOf<TypeReferenceSimple>()
-
     override val embeddedSyntaxAnalyser: Map<String, SyntaxAnalyser<TypeModel>> = emptyMap()
 
     override fun clear() {
         super.clear()
-        this.typeReferences.clear()
     }
 
     override fun configure(configurationContext: SentenceContext<GrammarItem>, configuration: Map<String, Any>): List<LanguageIssue> {
@@ -67,37 +65,43 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
     // model = namespace* ;
     private fun model(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): TypeModel {
         val result = TypeModelSimple("aTypeModel")
-        val namespaces = (children as List<((model: TypeModel) -> TypeNamespace)?>).filterNotNull()
-        namespaces.forEach {
-            val ns = it.invoke(result)
+        val namespaces = (children as List<TypeNamespace?>).filterNotNull()
+        namespaces.forEach { ns ->
             result.addNamespace(ns)
         }
         return result
     }
 
-    // namespace = 'namespace' path '{' declaration* '}' ;
+    // namespace = 'namespace' qualifiedName '{' import* declaration* '}' ;
     private fun namespace(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): TypeNamespace {
-        val path = children[1] as List<String>
-        val declaration = (children[3] as List<((namespace: TypeNamespace) -> TypeDefinition)?>).filterNotNull()
-        val qn = path.joinToString(separator = ".")
+        val qualifiedName = children[1] as List<String?>
+        val imports = (children[3] as List<String?>).filterNotNull()
+        val declaration = (children[4] as List<((namespace: TypeNamespace) -> TypeDefinition)?>).filterNotNull()
+        val qn = qualifiedName.joinToString(separator = ".")
 
-        val ns = TypeNamespaceSimple(qn)
+        val ns = TypeNamespaceSimple(qn, imports)
         declaration.forEach {
-           val dec = it.invoke(ns)
-           ns.addDeclaration(dec)
+            val dec = it.invoke(ns)
+            ns.addDeclaration(dec)
         }
 
         return ns
     }
 
-    // path = [ NAME / '.']+ ;
-    private fun path(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<String> {
+    // qualifiedName = [ NAME / '.']+ ;
+    private fun qualifiedName(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<String> {
         return children.toSeparatedList<String, String>().items
+    }
+
+    // import = 'import' qualifiedName ;
+    private fun import(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): String {
+        val qualifiedName = children[1] as List<String>
+        return qualifiedName.joinToString(separator = ".")
     }
 
     // declaration = primitive | enum | collection | datatype ;
     private fun declaration(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: TypeNamespace) -> TypeDefinition =
-         children[0] as (namespace: TypeNamespace) -> TypeDefinition
+        children[0] as (namespace: TypeNamespace) -> TypeDefinition
 
     // primitive = 'primitive' NAME ;
     private fun primitive(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: TypeNamespace) -> PrimitiveType {
@@ -129,49 +133,43 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
     }
 
     // datatype = 'datatype' NAME supertypes? '{' property* '}' ;
-    private fun datatype(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: TypeNamespace) -> ElementType {
+    private fun datatype(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: TypeNamespace) -> DataType {
         val name = children[1] as String
-        val supertypes = children[2] as List<TypeReference>? ?: emptyList()
-        val property = (children[4] as List<((ElementType) -> PropertyDeclaration)?>).filterNotNull()
+        val supertypes = children[2] as List<TypeInstanceSimple>? ?: emptyList()
+        val property = (children[4] as List<((DataType) -> PropertyDeclaration)?>).filterNotNull()
 
-        val result = { namespace: TypeNamespace ->
-            val dt = ElementTypeSimple(namespace, name)
+        val result = { ns: TypeNamespace ->
+            val dt = DataTypeSimple(ns, name)
             supertypes.forEach {
-                (it as TypeReferenceSimple).contextResolver = dt.resolver
-                dt.addSuperType(it)
+                it.namespace = ns
+                dt.addSuperType(it.type as DataType)
             }
             property.forEach {
                 val p = it.invoke(dt)
-                dt.addProperty(p)
-                setResolvers(p.typeInstance as TypeReferenceSimple, dt)
+                setResolvers(p.typeInstance as TypeInstanceSimple, dt)
             }
             dt//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         }
         return result
     }
 
-    private fun setResolvers(tr:TypeReferenceSimple, dt:DatatypeSimple) {
-        tr.contextResolver = dt.resolver
-        tr.typeArguments.forEach { setResolvers(it as TypeReferenceSimple, dt) }
+    private fun setResolvers(ti: TypeInstanceSimple, dt: DataType) {
+        ti.namespace = dt.namespace
+        ti.typeArguments.forEach { setResolvers(it as TypeInstanceSimple, dt) }
     }
 
     // supertypes = ':' [ typeReference / ',']+ ;
-    private fun supertypes(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<TypeReference> {
-        return (children[1] as List<*>).filterNotNull().toSeparatedList<TypeReference, String>().items
+    private fun supertypes(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<TypeInstanceSimple> {
+        return (children[1] as List<*>).filterNotNull().toSeparatedList<TypeInstanceSimple, String>().items
     }
 
     // property = characteristic NAME : typeReference ;
     private fun property(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (StructuredType) -> PropertyDeclaration {
         val characteristics: List<PropertyCharacteristic> = children[0] as List<PropertyCharacteristic>
         val name = children[1] as String
-        val typeReference = children[3] as TypeReferenceSimple
+        val typeInstance = children[3] as TypeInstanceSimple
         val result = { owner: StructuredType ->
-            //typeReference.contextResolver = (datatype as DatatypeSimple).resolver
-//            typeReference.typeArguments.forEach {
-//                (it as TypeReferenceSimple).contextResolver = (datatype as DatatypeSimple).resolver
-//            }
-            val pd = PropertyDeclarationSimple(owner, name, typeInstance, characteristics.toSet(), owner.properties.size)
-            pd//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+            owner.appendProperty(name, typeInstance, characteristics.toSet())
         }
         return result
     }
@@ -193,18 +191,18 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
         }
     }
 
-    // typeReference = path typeArgumentList? '?'?;
-    private fun typeReference(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): TypeReference {
-        val path = children[0] as List<String>
-        val typeArgumentList = children[1] as List<TypeReference>? ?: emptyList()
-        val tr = TypeReferenceSimple(path, typeArgumentList)//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
-        this.typeReferences.add(tr)
+    // typeReference = qualifiedName typeArgumentList? '?'?;
+    private fun typeReference(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): TypeInstanceSimple {
+        val qualifiedName = children[0] as List<String>
+        val typeArgumentList = children[1] as List<TypeInstanceSimple>? ?: emptyList()
+        val qname = qualifiedName.joinToString(separator = ".")
+        val tr = TypeInstanceSimple(null, null, qname, typeArgumentList, false)//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         return tr
     }
 
     //typeArgumentList = '<' [ typeReference / ',']+ '>' ;
-    private fun typeArgumentList(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<TypeReference> {
-        val list = (children[1] as List<*>).toSeparatedList<TypeReference, String>().items
+    private fun typeArgumentList(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<TypeInstanceSimple> {
+        val list = (children[1] as List<*>).toSeparatedList<TypeInstanceSimple, String>().items
         return list
     }
 

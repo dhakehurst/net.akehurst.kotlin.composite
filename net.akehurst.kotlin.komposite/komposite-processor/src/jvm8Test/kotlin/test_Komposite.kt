@@ -16,7 +16,6 @@
 
 package net.akehurst.kotlin.komposite.processor
 
-import net.akehurst.language.api.processor.LanguageProcessor
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import kotlin.test.Test
@@ -24,7 +23,7 @@ import kotlin.test.assertNotNull
 
 
 @RunWith(Parameterized::class)
-class test_Parser(val data: Data) {
+class test_Komposite(val data: Data) {
 
     class Data(val sourceFileName: String, val fileContent: String) {
 
