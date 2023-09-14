@@ -79,7 +79,7 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
         val declaration = (children[4] as List<((namespace: TypeNamespace) -> TypeDefinition)?>).filterNotNull()
         val qn = qualifiedName.joinToString(separator = ".")
 
-        val ns = TypeNamespaceSimple(qn, imports)
+        val ns = TypeNamespaceSimple(qn, imports.toMutableList())
         declaration.forEach {
             val dec = it.invoke(ns)
             ns.addDeclaration(dec)
@@ -196,7 +196,7 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
         val qualifiedName = children[0] as List<String>
         val typeArgumentList = children[1] as List<TypeInstanceSimple>? ?: emptyList()
         val qname = qualifiedName.joinToString(separator = ".")
-        val tr = TypeInstanceSimple(null, null, qname, typeArgumentList, false)//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+        val tr = TypeInstanceSimple(null,  qname, typeArgumentList, false)//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         return tr
     }
 

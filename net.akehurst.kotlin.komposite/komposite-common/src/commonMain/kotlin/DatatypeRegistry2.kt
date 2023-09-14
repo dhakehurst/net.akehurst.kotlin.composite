@@ -47,7 +47,7 @@ class DatatypeRegistry2 : TypeModelSimpleAbstract("registry") {
         """.trimIndent()
 
         val KOTLIN_STD_MODEL = typeModel("kotlin-std") {
-            namespace("kotlin", emptyList()) {
+            namespace("kotlin", mutableListOf()) {
                 primitiveType("Boolean")
                 primitiveType("Byte")
                 primitiveType("Short")
@@ -60,7 +60,7 @@ class DatatypeRegistry2 : TypeModelSimpleAbstract("registry") {
 
                 }
             }
-            namespace("kotlin.collections", emptyList()) {
+            namespace("kotlin.collections", mutableListOf()) {
                 collectionType("Array", listOf("E"))
                 collectionType("Collection", listOf("E"))
                 collectionType("List", listOf("E"))
