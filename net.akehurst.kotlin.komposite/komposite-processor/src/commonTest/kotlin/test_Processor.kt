@@ -67,11 +67,11 @@ class test_Processor() {
     @Test
     fun process() {
 
-        val expected = typeModel("aTypeModel") {
-            namespace("colls", emptyList()) {
+        val expected = typeModel("aTypeModel", false, emptyList()) {
+            namespace("colls", mutableListOf()) {
                 collectionType("List", listOf("E"))
             }
-            namespace("test", emptyList()) {
+            namespace("test", mutableListOf()) {
                 primitiveType("String")
                 primitiveType("Int")
                 primitiveType("XXXX")
@@ -85,7 +85,7 @@ class test_Processor() {
                 }
                 dataType("Dt2")
                 dataType("TestDatatype2") {
-                    superTypes("TestDatatype", "Dt2")
+                    supertypes("TestDatatype", "Dt2")
                 }
 
             }

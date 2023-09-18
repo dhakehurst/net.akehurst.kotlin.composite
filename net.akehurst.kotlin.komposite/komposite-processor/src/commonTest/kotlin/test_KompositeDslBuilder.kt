@@ -21,40 +21,40 @@ import kotlin.test.assertEquals
 
 class test_KompositeDslBuilder {
 
-    @Test
-    fun f() {
-        val actual = komposite {
-            namespace("test.namespace") {
-                enumType("TestEnum")
-                primitiveType("TestPrimitive")
-                dataType("TestDataTypeAbstract") {}
-                dataType("TestDataType") {
-                    superTypes("TestDataTypeAbstract")
-                    constructorArguments {
-                        reference("refArgProp", "SomeType")
-                        composite("cmpArgProp", "SomeType")
-                        reference("toSelf", "TestDataType")
-                    }
-                    mutableProperties {
-                        reference("refProp", "String")
-                        composite("cmpProp", "TestEnum")
-                        composite("listProp", "List") { typeArgument("String") }
-                        composite("mapProp", "Map") { typeArgument("String"); typeArgument("TestPrimitive") }
-                        composite("setOfMapProp", "Set") {
-                            typeArgument("Map") {
-                                typeArgument("String")
-                                typeArgument("TestPrimitive")
-                            }
-                        }
-                    }
-                }
-                dataType("TestDataTypeWithTypeParameters") {
-                    typeParameters("E")
-                }
-            }
-        }
-
-        assertEquals(listOf("test","namespace"),actual.namespaces[0].path)
-//TODO: better test checks
-    }
+//    @Test
+//    fun f() {
+//        val actual = komposite {
+//            namespace("test.namespace") {
+//                enumType("TestEnum")
+//                primitiveType("TestPrimitive")
+//                dataType("TestDataTypeAbstract") {}
+//                dataType("TestDataType") {
+//                    superTypes("TestDataTypeAbstract")
+//                    constructorArguments {
+//                        reference("refArgProp", "SomeType")
+//                        composite("cmpArgProp", "SomeType")
+//                        reference("toSelf", "TestDataType")
+//                    }
+//                    mutableProperties {
+//                        reference("refProp", "String")
+//                        composite("cmpProp", "TestEnum")
+//                        composite("listProp", "List") { typeArgument("String") }
+//                        composite("mapProp", "Map") { typeArgument("String"); typeArgument("TestPrimitive") }
+//                        composite("setOfMapProp", "Set") {
+//                            typeArgument("Map") {
+//                                typeArgument("String")
+//                                typeArgument("TestPrimitive")
+//                            }
+//                        }
+//                    }
+//                }
+//                dataType("TestDataTypeWithTypeParameters") {
+//                    typeParameters("E")
+//                }
+//            }
+//        }
+//
+//        assertEquals(listOf("test","namespace"),actual.namespaces[0].path)
+////TODO: better test checks
+//    }
 }

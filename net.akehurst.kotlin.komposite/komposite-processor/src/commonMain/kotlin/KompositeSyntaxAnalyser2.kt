@@ -142,7 +142,8 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
             val dt = DataTypeSimple(ns, name)
             supertypes.forEach {
                 it.namespace = ns
-                dt.addSuperType(it.type as DataType)
+                dt.addSupertype(it.type.name)
+                (it.type as DataType).addSubtype(dt.name)
             }
             property.forEach {
                 val p = it.invoke(dt)
