@@ -29,6 +29,17 @@ import net.akehurst.language.typemodel.simple.*
 import net.akehurst.language.typemodel.simple.TypeInstanceSimple
 
 
+data class TypeRefInfo(
+    val name:String,
+    val args:List<TypeRefInfo>,
+    val isNullable:Boolean
+) {
+    fun toTypeInstance(namespace:TypeNamespace):TypeInstance {
+        val targs = args.map { it.toTypeInstance(namespace) }
+        return namespace.createTypeInstance(name, targs, isNullable)
+    }
+}
+
 class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<TypeModel>() {
 
     class SyntaxAnalyserException : RuntimeException {
@@ -135,15 +146,14 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
     // datatype = 'datatype' NAME supertypes? '{' property* '}' ;
     private fun datatype(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: TypeNamespace) -> DataType {
         val name = children[1] as String
-        val supertypes = children[2] as List<TypeInstanceSimple>? ?: emptyList()
+        val supertypes = children[2] as List<TypeRefInfo>? ?: emptyList()
         val property = (children[4] as List<((DataType) -> PropertyDeclaration)?>).filterNotNull()
 
         val result = { ns: TypeNamespace ->
             val dt = DataTypeSimple(ns, name)
             supertypes.forEach {
-                it.namespace = ns
-                dt.addSupertype(it.type.name)
-                (it.type as DataType).addSubtype(dt.name)
+                dt.addSupertype(it.name)
+                //(it.type as DataType).addSubtype(dt.name)
             }
             property.forEach {
                 val p = it.invoke(dt)
@@ -155,21 +165,22 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
     }
 
     private fun setResolvers(ti: TypeInstanceSimple, dt: DataType) {
-        ti.namespace = dt.namespace
+        //ti.namespace = dt.namespace
         ti.typeArguments.forEach { setResolvers(it as TypeInstanceSimple, dt) }
     }
 
     // supertypes = ':' [ typeReference / ',']+ ;
-    private fun supertypes(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<TypeInstanceSimple> {
-        return (children[1] as List<*>).filterNotNull().toSeparatedList<TypeInstanceSimple, String>().items
+    private fun supertypes(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<TypeRefInfo> {
+        return (children[1] as List<*>).filterNotNull().toSeparatedList<TypeRefInfo, String>().items
     }
 
     // property = characteristic NAME : typeReference ;
     private fun property(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (StructuredType) -> PropertyDeclaration {
         val characteristics: List<PropertyCharacteristic> = children[0] as List<PropertyCharacteristic>
         val name = children[1] as String
-        val typeInstance = children[3] as TypeInstanceSimple
+        val typeRef = children[3] as TypeRefInfo
         val result = { owner: StructuredType ->
+            val typeInstance = typeRef.toTypeInstance(owner.namespace)
             owner.appendProperty(name, typeInstance, characteristics.toSet())
         }
         return result
@@ -193,17 +204,18 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
     }
 
     // typeReference = qualifiedName typeArgumentList? '?'?;
-    private fun typeReference(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): TypeInstanceSimple {
+    private fun typeReference(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): TypeRefInfo {
         val qualifiedName = children[0] as List<String>
-        val typeArgumentList = children[1] as List<TypeInstanceSimple>? ?: emptyList()
+        val typeArgumentList = children[1] as List<TypeRefInfo>? ?: emptyList()
         val qname = qualifiedName.joinToString(separator = ".")
-        val tr = TypeInstanceSimple(null,  qname, typeArgumentList, false)//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
+        val isNullable = (children[2] as String?) !=null
+        val tr = TypeRefInfo(qname, typeArgumentList, isNullable)//.also { locationMap[it] = nodeInfo.node.locationIn(sentence) }
         return tr
     }
 
     //typeArgumentList = '<' [ typeReference / ',']+ '>' ;
-    private fun typeArgumentList(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<TypeInstanceSimple> {
-        val list = (children[1] as List<*>).toSeparatedList<TypeInstanceSimple, String>().items
+    private fun typeArgumentList(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<TypeRefInfo> {
+        val list = (children[1] as List<*>).toSeparatedList<TypeRefInfo, String>().items
         return list
     }
 

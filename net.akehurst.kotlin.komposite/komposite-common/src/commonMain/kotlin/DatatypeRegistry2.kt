@@ -111,7 +111,7 @@ class DatatypeRegistry2 : TypeModelSimpleAbstract("registry") {
     fun registerFromKompositeModel(kompositeModel: TypeModel, primitiveMappers: Map<KClass<*>, PrimitiveMapper<*, *>>) {
         this._primitiveMappers.putAll(primitiveMappers)
         kompositeModel.allNamespace.forEach {
-            this.addNamespace(it)
+                this.addNamespace(it)
         }
     }
 
