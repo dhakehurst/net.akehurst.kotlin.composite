@@ -36,7 +36,7 @@ class test_EnumType {
             enum EEEE
         }
         """.trimIndent()
-        val dt = DatatypeRegistry()
+        val dt = DatatypeRegistry2()
         dt.registerFromConfigString(komposite, emptyMap())
 
         val et = dt.findEnumByClass(EEEE::class)!!

@@ -18,15 +18,11 @@ package net.akehurst.kotlin.komposite.processor
 
 import net.akehurst.language.agl.collections.toSeparatedList
 import net.akehurst.language.agl.syntaxAnalyser.SyntaxAnalyserByMethodRegistrationAbstract
-import net.akehurst.language.api.analyser.SyntaxAnalyser
-import net.akehurst.language.api.grammar.GrammarItem
-import net.akehurst.language.api.processor.LanguageIssue
-import net.akehurst.language.api.processor.SentenceContext
 import net.akehurst.language.api.sppt.Sentence
 import net.akehurst.language.api.sppt.SpptDataNodeInfo
+import net.akehurst.language.api.syntaxAnalyser.SyntaxAnalyser
 import net.akehurst.language.typemodel.api.*
 import net.akehurst.language.typemodel.simple.*
-import net.akehurst.language.typemodel.simple.TypeInstanceSimple
 
 
 data class TypeRefInfo(
@@ -67,10 +63,6 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
 
     override fun clear() {
         super.clear()
-    }
-
-    override fun configure(configurationContext: SentenceContext<GrammarItem>, configuration: Map<String, Any>): List<LanguageIssue> {
-        return emptyList()
     }
 
     // model = namespace* ;
