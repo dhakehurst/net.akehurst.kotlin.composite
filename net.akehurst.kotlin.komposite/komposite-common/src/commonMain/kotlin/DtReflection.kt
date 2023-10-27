@@ -22,7 +22,7 @@ import net.akehurst.kotlinx.reflect.reflect
 import net.akehurst.language.typemodel.api.*
 import kotlin.reflect.KClass
 
-val TypeDefinition.clazz: KClass<*> get() = KotlinxReflect.classForName(qualifiedName)
+val TypeDeclaration.clazz: KClass<*> get() = KotlinxReflect.classForName(qualifiedName)
 
 //val PropertyDeclaration.isMutable: Boolean get() = this.datatype.clazz.reflect().isPropertyMutable(this.name)
 // reflection isMutable does not work at present!

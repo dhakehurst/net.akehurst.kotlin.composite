@@ -16,11 +16,11 @@
 
 package net.akehurst.kotlin.komposite.processor
 
-import net.akehurst.language.agl.collections.toSeparatedList
 import net.akehurst.language.agl.syntaxAnalyser.SyntaxAnalyserByMethodRegistrationAbstract
 import net.akehurst.language.api.sppt.Sentence
 import net.akehurst.language.api.sppt.SpptDataNodeInfo
 import net.akehurst.language.api.syntaxAnalyser.SyntaxAnalyser
+import net.akehurst.language.collections.toSeparatedList
 import net.akehurst.language.typemodel.api.*
 import net.akehurst.language.typemodel.simple.*
 
@@ -79,7 +79,7 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
     private fun namespace(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): TypeNamespace {
         val qualifiedName = children[1] as List<String?>
         val imports = (children[3] as List<String?>).filterNotNull()
-        val declaration = (children[4] as List<((namespace: TypeNamespace) -> TypeDefinition)?>).filterNotNull()
+        val declaration = (children[4] as List<((namespace: TypeNamespace) -> TypeDeclaration)?>).filterNotNull()
         val qn = qualifiedName.joinToString(separator = ".")
 
         val ns = TypeNamespaceSimple(qn, imports.toMutableList())
@@ -103,8 +103,8 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
     }
 
     // declaration = primitive | enum | collection | datatype ;
-    private fun declaration(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: TypeNamespace) -> TypeDefinition =
-        children[0] as (namespace: TypeNamespace) -> TypeDefinition
+    private fun declaration(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: TypeNamespace) -> TypeDeclaration =
+        children[0] as (namespace: TypeNamespace) -> TypeDeclaration
 
     // primitive = 'primitive' NAME ;
     private fun primitive(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): (namespace: TypeNamespace) -> PrimitiveType {
@@ -173,7 +173,7 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
         val typeRef = children[3] as TypeRefInfo
         val result = { owner: StructuredType ->
             val typeInstance = typeRef.toTypeInstance(owner.namespace)
-            owner.appendProperty(name, typeInstance, characteristics.toSet())
+            owner.appendStoredProperty(name, typeInstance, characteristics.toSet())
         }
         return result
     }

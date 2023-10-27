@@ -19,6 +19,8 @@ package net.akehurst.kotlin.komposite.common
 import net.akehurst.kotlin.komposite.api.KompositeException
 import net.akehurst.kotlin.komposite.api.PrimitiveMapper
 import net.akehurst.kotlin.komposite.processor.Komposite
+import net.akehurst.kotlinx.reflect.KotlinxReflect
+import net.akehurst.kotlinx.reflect.reflect
 import net.akehurst.language.typemodel.api.*
 import net.akehurst.language.typemodel.simple.TypeModelSimpleAbstract
 import kotlin.reflect.KClass
@@ -115,7 +117,7 @@ class DatatypeRegistry2 : TypeModelSimpleAbstract("registry") {
         }
     }
 
-    fun findTypeDeclarationByKClass(cls: KClass<*>): TypeDefinition? {
+    fun findTypeDeclarationByKClass(cls: KClass<*>): TypeDeclaration? {
         //TODO: use qualified name when possible (i.e. when JS reflection supports qualified names)
         //val qname = cls.qualifiedName ?: error("class does not have a qualifiedName!")
         val qname = cls.simpleName ?: error("class does not have a simple name!")
@@ -166,5 +168,24 @@ class DatatypeRegistry2 : TypeModelSimpleAbstract("registry") {
             is Array<*> -> this.findFirstByNameOrNull("Array") as CollectionType?
             else -> this.findFirstByNameOrNull(value::class.simpleName!!) as CollectionType?
         }
+    }
+
+    fun checkPublicAndReflectable() : List<String> {
+        val issues = mutableListOf<String>()
+        for (ns in super.allNamespace) {
+            when(ns.qualifiedName) {
+                "kotlin" -> Unit //don't check kotlin namespace
+                else -> {
+                    for (t in ns.elementType) {
+                        when {
+                            //cls.reflect().exists -> Unit //OK
+                            KotlinxReflect.registeredClasses.containsKey(t.qualifiedName) -> Unit // OK gegistered
+                            else -> issues.add("Type '${t.qualifiedName}' is not registered with kotlinxReflect")
+                        }
+                    }
+                }
+            }
+        }
+        return issues
     }
 }
