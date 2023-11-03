@@ -20,7 +20,6 @@ import net.akehurst.kotlin.komposite.api.KompositeException
 import net.akehurst.kotlin.komposite.api.PrimitiveMapper
 import net.akehurst.kotlin.komposite.processor.Komposite
 import net.akehurst.kotlinx.reflect.KotlinxReflect
-import net.akehurst.kotlinx.reflect.reflect
 import net.akehurst.language.typemodel.api.*
 import net.akehurst.language.typemodel.simple.TypeModelSimpleAbstract
 import kotlin.reflect.KClass
@@ -103,16 +102,16 @@ class DatatypeRegistry2 : TypeModelSimpleAbstract("registry") {
             if (null == result.asm) {
                 throw KompositeException("Error processing config string", result.issues.errors, null)
             } else {
-                this.registerFromKompositeModel(result.asm!!, primitiveMappers)
+                this.registerFromTypeModel(result.asm!!, primitiveMappers)
             }
         } catch (e: Exception) {
             throw KompositeException("Error trying to register datatypes from config string - ${e.message}", e)
         }
     }
 
-    fun registerFromKompositeModel(kompositeModel: TypeModel, primitiveMappers: Map<KClass<*>, PrimitiveMapper<*, *>>) {
+    fun registerFromTypeModel(typeModel: TypeModel, primitiveMappers: Map<KClass<*>, PrimitiveMapper<*, *>>) {
         this._primitiveMappers.putAll(primitiveMappers)
-        kompositeModel.allNamespace.forEach {
+        typeModel.allNamespace.forEach {
                 this.addNamespace(it)
         }
     }

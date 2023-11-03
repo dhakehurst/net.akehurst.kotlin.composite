@@ -29,7 +29,7 @@ class test_KompositeWalker {
 
     @Test
     fun walk_null() {
-        val reg = DatatypeRegistry()
+        val reg = DatatypeRegistry2()
         val sut = kompositeWalker<String?, String>(reg) {
             nullValue() { path,info->
                 WalkInfo(path.lastOrNull(), "null")
@@ -53,7 +53,7 @@ class test_KompositeWalker {
         )
 
         var result = ""
-        val reg = DatatypeRegistry()
+        val reg = DatatypeRegistry2()
         reg.registerFromConfigString("""
             namespace kotlin {
                 primitive Int
@@ -108,7 +108,7 @@ class test_KompositeWalker {
 
         val obj1 = A()
 
-        val reg = DatatypeRegistry()
+        val reg = DatatypeRegistry2()
 
         reg.registerFromConfigString("""
             namespace net.akehurst.kotlin.komposite.common {

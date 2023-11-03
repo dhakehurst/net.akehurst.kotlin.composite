@@ -20,6 +20,7 @@ import net.akehurst.kotlinx.reflect.EnumValuesFunction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import net.akehurst.kotlinx.reflect.KotlinxReflect
+import net.akehurst.language.typemodel.api.EnumType
 
 enum class EEEE {
     RED, GREEN, BLUE
@@ -39,7 +40,7 @@ class test_EnumType {
         val dt = DatatypeRegistry2()
         dt.registerFromConfigString(komposite, emptyMap())
 
-        val et = dt.findEnumByClass(EEEE::class)!!
+        val et = dt.findFirstByNameOrNull("EEEE") as EnumType
 
         val actual = et.valueOf("RED")
         assertEquals(EEEE.RED, actual)

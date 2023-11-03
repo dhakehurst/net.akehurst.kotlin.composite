@@ -30,9 +30,9 @@ data class TypeRefInfo(
     val args:List<TypeRefInfo>,
     val isNullable:Boolean
 ) {
-    fun toTypeInstance(namespace:TypeNamespace):TypeInstance {
-        val targs = args.map { it.toTypeInstance(namespace) }
-        return namespace.createTypeInstance(name, targs, isNullable)
+    fun toTypeInstance(contextType:TypeDeclaration):TypeInstance {
+        val targs = args.map { it.toTypeInstance(contextType) }
+        return contextType.namespace.createTypeInstance(contextType, name, targs, isNullable)
     }
 }
 
@@ -172,8 +172,8 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
         val name = children[1] as String
         val typeRef = children[3] as TypeRefInfo
         val result = { owner: StructuredType ->
-            val typeInstance = typeRef.toTypeInstance(owner.namespace)
-            owner.appendStoredProperty(name, typeInstance, characteristics.toSet())
+            val typeInstance = typeRef.toTypeInstance(owner)
+            owner.appendPropertyStored(name, typeInstance, characteristics.toSet())
         }
         return result
     }
