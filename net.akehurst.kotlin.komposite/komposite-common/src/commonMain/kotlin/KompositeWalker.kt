@@ -51,6 +51,7 @@ class KompositeWalker<P : Any?, A : Any?>(
     val collSeparate: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A>,
     val collEnd: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A>,
     val reference: (path: List<String>, info: WalkInfo<P, A>, value: Any, property: PropertyDeclaration) -> WalkInfo<P, A>,
+    val singleton: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: SingletonType) -> WalkInfo<P, A>,
     val primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*, *>?) -> WalkInfo<P, A>,
     val enum: (path: List<String>, info: WalkInfo<P, A>, enum: Enum<*>) -> WalkInfo<P, A>,
     val nullValue: (path: List<String>, info: WalkInfo<P, A>) -> WalkInfo<P, A>
@@ -82,6 +83,7 @@ class KompositeWalker<P : Any?, A : Any?>(
         private var _collSeparate: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>, previousElement: Any?) -> WalkInfo<P, A> = { _, info, _, _, _ -> info }
         private var _collEnd: (path: List<String>, info: WalkInfo<P, A>, type: CollectionType, coll: Collection<*>) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _reference: (path: List<String>, info: WalkInfo<P, A>, value: Any, property: PropertyDeclaration) -> WalkInfo<P, A> = { _, info, _, _ -> info }
+        private var _singleton: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: SingletonType) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _primitive: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*, *>?) -> WalkInfo<P, A> = { _, info, _, _ -> info }
         private var _enum: (path: List<String>, info: WalkInfo<P, A>, enum: Enum<*>) -> WalkInfo<P, A> = { _, info, _ -> info }
         private var _nullValue: (path: List<String>, info: WalkInfo<P, A>) -> WalkInfo<P, A> = { _, info -> info }
@@ -158,6 +160,10 @@ class KompositeWalker<P : Any?, A : Any?>(
             this._reference = func
         }
 
+        fun singleton(func: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: SingletonType) -> WalkInfo<P, A>) {
+            this._singleton = func
+        }
+
         fun primitive(func: (path: List<String>, info: WalkInfo<P, A>, primitive: Any, mapper: PrimitiveMapper<*, *>?) -> WalkInfo<P, A>) {
             this._primitive = func
         }
@@ -178,7 +184,7 @@ class KompositeWalker<P : Any?, A : Any?>(
                 _propertyBegin, _propertyEnd,
                 _mapBegin, _mapEntryKeyBegin, _mapEntryKeyEnd, _mapEntryValueBegin, _mapEntryValueEnd, _mapSeparate, _mapEnd,
                 _collBegin, _collElementBegin, _collElementEnd, _collSeparate, _collEnd,
-                _reference, _primitive, _enum, _nullValue
+                _reference, _singleton, _primitive, _enum, _nullValue
             )
         }
     }
@@ -195,8 +201,15 @@ class KompositeWalker<P : Any?, A : Any?>(
             registry.isEnum(data) -> walkEnum(path, info, data)
             registry.isCollection(data) -> walkCollection(owningProperty, path, info, data)
             registry.isDatatype(data) -> walkObject(owningProperty, path, info, data)
+            registry.isSingleton(data) -> walkSingleton(owningProperty, path, info, data)
             else -> throw KompositeException("Don't know how to walk object of class: ${data::class}")
         }
+    }
+
+    protected fun walkSingleton(owningProperty: PropertyDeclaration?, path: List<String>, info: WalkInfo<P, A>, obj: Any): WalkInfo<P, A> {
+        val cls = obj::class
+        val dt = registry.findFirstByNameOrNull(cls.simpleName!!) as SingletonType
+        return this.singleton(path, info, obj, dt)
     }
 
     protected fun walkPropertyValue(owningProperty: PropertyDeclaration, path: List<String>, info: WalkInfo<P, A>, propValue: Any?): WalkInfo<P, A> {

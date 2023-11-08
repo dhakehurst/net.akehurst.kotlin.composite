@@ -93,7 +93,7 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
 
     // qualifiedName = [ NAME / '.']+ ;
     private fun qualifiedName(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<String> {
-        return children.toSeparatedList<String, String>().items
+        return children.toSeparatedList<Any?, String, String>().items
     }
 
     // import = 'import' qualifiedName ;
@@ -163,7 +163,7 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
 
     // supertypes = ':' [ typeReference / ',']+ ;
     private fun supertypes(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<TypeRefInfo> {
-        return (children[1] as List<*>).filterNotNull().toSeparatedList<TypeRefInfo, String>().items
+        return (children[1] as List<Any>).filterNotNull().toSeparatedList<Any, TypeRefInfo, String>().items
     }
 
     // property = characteristic NAME : typeReference ;
@@ -207,7 +207,7 @@ class KompositeSyntaxAnalyser2 : SyntaxAnalyserByMethodRegistrationAbstract<Type
 
     //typeArgumentList = '<' [ typeReference / ',']+ '>' ;
     private fun typeArgumentList(nodeInfo: SpptDataNodeInfo, children: List<Any?>, sentence: Sentence): List<TypeRefInfo> {
-        val list = (children[1] as List<*>).toSeparatedList<TypeRefInfo, String>().items
+        val list = (children[1] as List<Any>).toSeparatedList<Any, TypeRefInfo, String>().items
         return list
     }
 

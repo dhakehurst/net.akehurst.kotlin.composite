@@ -27,7 +27,16 @@ val TypeDeclaration.clazz: KClass<*> get() = KotlinxReflect.classForName(qualifi
 //val PropertyDeclaration.isMutable: Boolean get() = this.datatype.clazz.reflect().isPropertyMutable(this.name)
 // reflection isMutable does not work at present!
 // assume member properties are mutable unless they are a collection (in which case they are assumed a mutable collection)
-val PropertyDeclaration.isMutable: Boolean get() = characteristics.contains(PropertyCharacteristic.MEMBER) && typeInstance.type !is CollectionType
+val PropertyDeclaration.isMutable: Boolean get() = characteristics.contains(PropertyCharacteristic.MEMBER) && typeInstance.declaration !is CollectionType
+
+fun SingletonType.objectInstance(): Any {
+    try {
+        val obj = KotlinxReflect.objectInstance<Any>(this.qualifiedName)
+        return obj as Any
+    } catch (t: Throwable) {
+        throw KompositeException("Unable to fetch objectInstance ${this.name} due to ${t.message ?: "Unknown"}")
+    }
+}
 
 fun DataType.construct(vararg constructorArgs: Any?): Any {
     try {

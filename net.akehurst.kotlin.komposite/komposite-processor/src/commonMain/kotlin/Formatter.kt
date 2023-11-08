@@ -19,13 +19,13 @@ package net.akehurst.kotlin.komposite.processor
 import net.akehurst.language.agl.processor.FormatResultDefault
 import net.akehurst.language.agl.processor.FormatterAbstract
 import net.akehurst.language.agl.processor.IssueHolder
-import net.akehurst.language.api.asm.AsmSimple
+import net.akehurst.language.api.asm.Asm
 import net.akehurst.language.api.processor.FormatResult
 import net.akehurst.language.api.processor.LanguageProcessorPhase
 
-class Formatter : FormatterAbstract<AsmSimple>() {
+class Formatter : FormatterAbstract<Asm>() {
 
-    override fun format(asm: AsmSimple): FormatResult {
+    override fun format(asm: Asm): FormatResult {
         return FormatResultDefault("", IssueHolder(LanguageProcessorPhase.FORMATTER))
     }
 

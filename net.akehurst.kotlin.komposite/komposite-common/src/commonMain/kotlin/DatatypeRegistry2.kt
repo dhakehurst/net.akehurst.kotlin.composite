@@ -18,7 +18,9 @@ package net.akehurst.kotlin.komposite.common
 
 import net.akehurst.kotlin.komposite.api.KompositeException
 import net.akehurst.kotlin.komposite.api.PrimitiveMapper
+import net.akehurst.kotlin.komposite.common.DatatypeRegistry2.Companion.isKotlinArray
 import net.akehurst.kotlin.komposite.processor.Komposite
+import net.akehurst.kotlin.komposite.processor.TypeRefInfo
 import net.akehurst.kotlinx.reflect.KotlinxReflect
 import net.akehurst.language.typemodel.api.*
 import net.akehurst.language.typemodel.simple.TypeModelSimpleAbstract
@@ -64,11 +66,15 @@ class DatatypeRegistry2 : TypeModelSimpleAbstract("registry") {
             namespace("kotlin.collections", emptyList()) {
                 collectionType("Array", listOf("E"))
                 collectionType("Collection", listOf("E"))
-                collectionType("List", listOf("E"))
-                collectionType("Set", listOf("E"))
+                collectionType("List", listOf("E")).also { it.addSupertype("Collection") }
+                collectionType("Set", listOf("E")).also { it.addSupertype("Collection") }
                 collectionType("Map", listOf("K", "V"))
             }
         }
+        val TypeDeclaration.isKotlinArray get() = this.qualifiedName=="kotlin.collections.Array"
+        val TypeDeclaration.isKotlinList get() = this.qualifiedName=="kotlin.collections.List"
+        val TypeDeclaration.isKotlinSet get() = this.qualifiedName=="kotlin.collections.Set"
+        val TypeDeclaration.isKotlinMap get() = this.qualifiedName=="kotlin.collections.Map"
 
         val JAVA_STD = """
             namespace java.lang {
@@ -131,6 +137,10 @@ class DatatypeRegistry2 : TypeModelSimpleAbstract("registry") {
         return this._primitiveMappers.values.firstOrNull {
             it.primitiveKlass.simpleName == clsName //FIXME: use qualified name when JS supports it!
         }
+    }
+
+    fun isSingleton(value: Any): Boolean {
+        return this.findFirstByNameOrNull(value::class.simpleName!!) is SingletonType
     }
 
     fun isPrimitive(value: Any): Boolean {
