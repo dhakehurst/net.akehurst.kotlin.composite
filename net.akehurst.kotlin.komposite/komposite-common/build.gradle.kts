@@ -16,9 +16,6 @@ dependencies {
 
     "commonMainImplementation"(kotlin("reflect"))
 
-
-    //because InteliJ can't find it at runtime !!!
-    "commonTestImplementation"("net.akehurst.language:agl-processor:${version_agl}")
 }
 
 

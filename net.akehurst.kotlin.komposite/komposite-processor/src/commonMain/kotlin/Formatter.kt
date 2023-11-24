@@ -26,7 +26,7 @@ import net.akehurst.language.api.processor.LanguageProcessorPhase
 class Formatter : FormatterAbstract<Asm>() {
 
     override fun format(asm: Asm): FormatResult {
-        return FormatResultDefault("", IssueHolder(LanguageProcessorPhase.FORMATTER))
+        return FormatResultDefault("", IssueHolder(LanguageProcessorPhase.FORMAT))
     }
 
 }
