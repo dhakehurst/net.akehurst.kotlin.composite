@@ -1,0 +1,23 @@
+[versions]
+kotlin = "2.0.20-RC"
+dokka = "1.9.10"
+exportPublic = "2.0.20-RC"
+buildconfig = "5.3.5"
+credentials = "3.0"
+
+nal-agl-processor = "4.2.0.20-RC"
+nak-kotlinx = "2.0.20-RC"
+
+
+[libraries]
+nal-agl-processor = { module = "net.akehurst.language:agl-processor", version.ref = "nal-agl-processor" }
+nak-kotlinx-collections = { module = "net.akehurst.kotlinx:kotlinx-collections", version.ref = "nak-kotlinx" }
+nak-kotlinx-reflect = { module = "net.akehurst.kotlinx:kotlinx-reflect", version.ref = "nak-kotlinx" }
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+exportPublic =  { id = "net.akehurst.kotlin.gradle.plugin.exportPublic", version.ref = "exportPublic" }
+reflect =  { id = "net.akehurst.kotlinx.kotlinx-reflect-gradle-plugin", version.ref = "nak-kotlinx" }
+buildconfig =  { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }
+credentials =  { id = "nu.studer.credentials", version.ref = "credentials" }

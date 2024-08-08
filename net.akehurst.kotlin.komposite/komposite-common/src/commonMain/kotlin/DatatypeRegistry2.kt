@@ -18,15 +18,13 @@ package net.akehurst.kotlin.komposite.common
 
 import net.akehurst.kotlin.komposite.api.KompositeException
 import net.akehurst.kotlin.komposite.api.PrimitiveMapper
-import net.akehurst.kotlin.komposite.common.DatatypeRegistry2.Companion.isKotlinArray
 import net.akehurst.kotlin.komposite.processor.Komposite
-import net.akehurst.kotlin.komposite.processor.TypeRefInfo
 import net.akehurst.kotlinx.reflect.KotlinxReflect
 import net.akehurst.language.typemodel.api.*
 import net.akehurst.language.typemodel.simple.TypeModelSimpleAbstract
 import kotlin.reflect.KClass
 
-class DatatypeRegistry2 : TypeModelSimpleAbstract("registry") {
+class DatatypeRegistry : TypeModelSimpleAbstract("registry") {
 
     companion object {
         val KOTLIN_STD_STRING = """

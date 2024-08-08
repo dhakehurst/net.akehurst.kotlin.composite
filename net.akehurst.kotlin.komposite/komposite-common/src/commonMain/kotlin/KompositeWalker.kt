@@ -20,7 +20,7 @@ import net.akehurst.kotlin.komposite.api.KompositeException
 import net.akehurst.kotlin.komposite.api.PrimitiveMapper
 import net.akehurst.language.typemodel.api.*
 
-inline fun <P : Any?, A : Any?> kompositeWalker(registry: DatatypeRegistry2, init: KompositeWalker.Builder<P, A>.() -> Unit): KompositeWalker<P, A> {
+inline fun <P : Any?, A : Any?> kompositeWalker(registry: DatatypeRegistry, init: KompositeWalker.Builder<P, A>.() -> Unit): KompositeWalker<P, A> {
     val builder = KompositeWalker.Builder<P, A>()
     builder.init()
     return builder.build(registry)
@@ -33,7 +33,7 @@ data class WalkInfo<P, A>(
 
 class KompositeWalker<P : Any?, A : Any?>(
     val configuration: Configuration,
-    val registry: DatatypeRegistry2,
+    val registry: DatatypeRegistry,
     val objectBegin: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: DataType) -> WalkInfo<P, A>,
     val objectEnd: (path: List<String>, info: WalkInfo<P, A>, obj: Any, datatype: DataType) -> WalkInfo<P, A>,
     val propertyBegin: (path: List<String>, info: WalkInfo<P, A>, property: PropertyDeclaration) -> WalkInfo<P, A>,
@@ -176,7 +176,7 @@ class KompositeWalker<P : Any?, A : Any?>(
             this._nullValue = func
         }
 
-        fun build(registry: DatatypeRegistry2): KompositeWalker<P, A> {
+        fun build(registry: DatatypeRegistry): KompositeWalker<P, A> {
             return KompositeWalker(
                 _configuration,
                 registry,
